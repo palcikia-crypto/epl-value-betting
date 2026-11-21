@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iteration 2 — Kelly, CLV, Tennis, Live</title>
+<style>
+  :root { --bg:#0e1117; --card:#161b22; --fg:#e6edf3; --muted:#8b949e; --red:#f85149; --green:#3fb950; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; padding:24px; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:16px; }
+  nav a { color:var(--accent); text-decoration:none; margin-right:16px; font-size:14px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin:16px 0; }
+  .card { background:var(--card); border:1px solid #21262d; border-radius:10px; padding:14px 16px; }
+  .card .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  .card .value { font-size:22px; font-weight:700; margin-top:6px; }
+  .pos { color:var(--green); } .neg { color:var(--red); }
+  section h2 { font-size:16px; margin:18px 0 10px; color:var(--accent); }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; font-size:14px; }
+  th,td { padding:9px 12px; text-align:left; border-bottom:1px solid #21262d; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  img.chart { max-width:100%; background:var(--card); border:1px solid #21262d; border-radius:10px; margin:8px 0; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .verdict { background:linear-gradient(135deg,#1a1f2b,#161b22); border:1px solid #30363d; border-radius:12px; padding:16px; margin-top:12px; font-size:15px; line-height:1.6; }
+</style>
+</head>
+<body>
+<h1>🧪 Итерация 2</h1>
+<div class="sub">Kelly-стейкинг · pre-close vs closing (CLV) · Tennis ATP (Elo + HistGB) · Live EPL 2025/26</div>
+<nav><a href="index.html">← EPL основной бэктест</a><a href="iter2.html">Итерация 2</a></nav>
+<div id="app">Загрузка…</div>
+<script>
+const pct=(x,d=2)=>(x*100).toFixed(d)+"%";
+const cls=v=>v>=0?"pos":"neg";
+async function load(){
+  try{ const r=await (await fetch("iter2.json")).json(); render(r); }
+  catch(e){ document.getElementById("app").innerHTML='<div class="verdict">⚠️ iter2.json не найден. Запусти <code>python3 iter2/run_iter2.py</code>.</div>'; }
+}
+function render(r){
+  const e=r.epl.experiments, ten=r.tennis, live=r.live_2526;
+  const expNames=[["preclose_flat_5","Flat 1% edge>5% (pre-close)"],["preclose_kelly_quarter_5","Quarter Kelly edge>5%"],
+    ["preclose_kelly_half_5","Half Kelly edge>5%"],["preclose_kelly_full_5","Full Kelly edge>5%"],
+    ["closing_flat_5","Flat 1% edge>5% (at close)"],["preclose_flat_10","Flat 1% edge>10% (pre-close)"],
+    ["closing_flat_10","Flat 1% edge>10% (at close)"]];
+  const expRows=expNames.map(([k,n])=>e[k]?`<tr><td>${n}</td><td>${e[k].n_bets}</td><td class="${cls(e[k].roi)}">${pct(e[k].roi)}</td><td class="${cls(e[k].yield_pct)}">${pct(e[k].yield_pct)}</td><td>${pct(e[k].max_drawdown,1)}</td></tr>`:"").join("");
+  const tenNames=[["2024_flat_2","Val 2024 flat edge>2%"],["2025_flat_2","Test 2025 flat edge>2%"],
+    ["2024_kelly_quarter_2","Val 2024 ¼-Kelly edge>2%"],["2025_kelly_quarter_2","Test 2025 ¼-Kelly edge>2%"],
+    ["2025_baseline_favorite","Test 2025 baseline (фаворит)"]];
+  const tenRows=tenNames.map(([k,n])=>ten[k]?`<tr><td>${n}</td><td>${ten[k].n_bets}</td><td class="${cls(ten[k].roi)}">${pct(ten[k].roi)}</td><td class="${cls(ten[k].yield_pct)}">${pct(ten[k].yield_pct)}</td><td>${pct(ten[k].win_rate,1)}</td></tr>`:"").join("");
+  const clv=r.epl.clv;
+  document.getElementById("app").innerHTML=`
+  <div class="grid">
+    <div class="card"><div class="label">CLV (EPL, mean)</div><div class="value ${cls(clv.mean_clv)}">${pct(clv.mean_clv)}</div></div>
+    <div class="card"><div class="label">CLV positive</div><div class="value">${pct(clv.positive_share,1)}</div></div>
+    <div class="card"><div class="label">Tennis acc 2025</div><div class="value">${pct(ten.test_accuracy_2025,1)}</div></div>
+    <div class="card"><div class="label">Live 25/26 ROI</div><div class="value ${cls(live.roi_so_far)}">${pct(live.roi_so_far)}</div></div>
+    <div class="card"><div class="label">Live 25/26 ставок</div><div class="value">${live.played} / ${live.count}</div></div>
+  </div>
+  <section><h2>EPL 2024/25 — стейкинг и выбор момента (test, ${r.epl.test_season})</h2>
+    <table><tr><th>Конфигурация</th><th>Ставок</th><th>ROI</th><th>Yield</th><th>Max DD</th></tr>${expRows}</table>
+    <div class="verdict" style="margin-top:10px"><b>CLV = ${pct(clv.mean_clv)}</b>, положительный только в ${pct(clv.positive_share,1)} ставок → модель не имеет преимущества против линии: к закрытию коэффициент движется ПРОТИВ наших ставок. Kelly лишь ускоряет проигрыш при отрицательном edge (ROI −80% против −36% у flat).</div>
+    <img class="chart" src="kelly_curve.png" alt="kelly vs flat">
+  </section>
+  <section><h2>🎾 Tennis ATP (Elo 538-стиль + рыночная фича, HistGB, калиброван)</h2>
+    <table><tr><th>Конфигурация</th><th>Ставок</th><th>ROI</th><th>Yield</th><th>Win rate</th></tr>${tenRows}</table>
+    <img class="chart" src="tennis_curve.png" alt="tennis curve">
+    <div class="verdict" style="margin-top:10px">Лучший теннисный конфиг (HistGB + implied-фича): <b>Val 2024 +0.81% yield → Test 2025 −0.21% yield</b> (1188 ставок). Пограничный к безубытку результат, победить baseline-фаворита (−3.37% yield) удалось, но значимого edge против Pinnacle нет. Фильтровать лонгшоты обязательно: без рыночной фичи yield −47% на низких коэффициентах.</div>
+  </section>
+  <section><h2>🔴 Live EPL 2025/26 (paper-прогнозы моделью на текущий сезон)</h2>
+    <div class="verdict">Прогнозов совершено: ${live.count}, сыграли: ${live.played}, побед: ${live.wins}. ROI (гипотетический flat 1%): <b class="${cls(live.roi_so_far)}">${pct(live.roi_so_far)}</b>. Сезон в процессе — это НЕ финальный вердикт, продолжаем мониторинг. Детали в live_2526.csv.</div>
+  </section>`;
+}
+load();
+</script>
+</body>
+</html>

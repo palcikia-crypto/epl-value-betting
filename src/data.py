@@ -19,6 +19,7 @@ KEEP_COLS = [
     "B365H", "B365D", "B365A",
     "PSH", "PSD", "PSA",
     "B365CH", "B365CD", "B365CA",
+    "PSCH", "PSCD", "PSCA",
 ]
 
 LEAKAGE_COLS = {"FTHG", "FTAG", "FTR", "HS", "AS", "HST", "AST", "HF", "AF",
