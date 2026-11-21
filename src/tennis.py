@@ -7,15 +7,16 @@ from collections import deque
 import numpy as np
 import pandas as pd
 
-BASE_TPL = "http://www.tennis-data.co.uk/hrjk-85HytOjkhth76j_ygh4jf7/{y}/{y}.xlsx"
+BASE_TPL = "http://www.tennis-data.co.uk/hrjk-85HytOjkhth76j_ygh4jf7/{y}{suffix}/{y}.xlsx"
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0"}
 
 
-def download_year(year: int, out_dir: str = "data/tennis") -> str:
+def download_year(year: int, out_dir: str = "data/tennis", tour: str = "atp") -> str:
     os.makedirs(out_dir, exist_ok=True)
-    out = os.path.join(out_dir, f"atp_{year}.xlsx")
+    suffix = "w" if tour.lower() == "wta" else ""
+    out = os.path.join(out_dir, f"{tour}_{year}.xlsx")
     if not os.path.exists(out):
-        req = urllib_request(BASE_TPL.format(y=year))
+        req = urllib_request(BASE_TPL.format(y=year, suffix=suffix))
         open(out, "wb").write(req)
     return out
 
@@ -26,8 +27,8 @@ def urllib_request(url):
     return urllib.request.urlopen(req, timeout=60).read()
 
 
-def load_year(year: int, out_dir: str = "data/tennis") -> pd.DataFrame:
-    df = pd.read_excel(download_year(year, out_dir))
+def load_year(year: int, out_dir: str = "data/tennis", tour: str = "atp") -> pd.DataFrame:
+    df = pd.read_excel(download_year(year, out_dir, tour))
     df.columns = [c.strip() for c in df.columns]
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     keep = df.dropna(subset=["Date", "Winner", "Loser", "PSW", "PSL"]).copy()
@@ -37,8 +38,8 @@ def load_year(year: int, out_dir: str = "data/tennis") -> pd.DataFrame:
     return keep.sort_values("Date").reset_index(drop=True)
 
 
-def load_years(years, out_dir="data/tennis") -> pd.DataFrame:
-    parts = [load_year(y, out_dir) for y in years]
+def load_years(years, out_dir="data/tennis", tour: str = "atp") -> pd.DataFrame:
+    parts = [load_year(y, out_dir, tour) for y in years]
     df = pd.concat(parts, ignore_index=True).sort_values("Date").reset_index(drop=True)
     return df
 

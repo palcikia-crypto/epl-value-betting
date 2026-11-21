@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Итерация 3 — Мульти-лига, причинность, WTA, Live-пул</title>
+<style>
+  :root { --bg:#0e1117; --card:#161b22; --fg:#e6edf3; --muted:#8b949e; --red:#f85149; --green:#3fb950; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; padding:24px; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:14px; }
+  nav a { color:var(--accent); text-decoration:none; margin-right:16px; font-size:14px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; font-size:14px; margin:10px 0; }
+  th,td { padding:9px 12px; text-align:left; border-bottom:1px solid #21262d; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  img.chart { max-width:100%; background:var(--card); border:1px solid #21262d; border-radius:10px; margin:8px 0; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .verdict { background:linear-gradient(135deg,#1a1f2b,#161b22); border:1px solid #30363d; border-radius:12px; padding:16px; margin-top:12px; font-size:15px; line-height:1.6; }
+  .pos { color:var(--green); } .neg { color:var(--red); }
+</style>
+</head>
+<body>
+<h1>🔬 Итерация 3</h1>
+<div class="sub">Мульти-лига (6 лиг) · причинная аблация фич-блоков · WTA · Live-пул 2025/26</div>
+<nav><a href="index.html">EPL бэктест</a><a href="iter2.html">Итерация 2</a><a href="iter3.html">Итерация 3</a></nav>
+<div id="app">Загрузка…</div>
+<script>
+const pct=(x,d=2)=>(x*100).toFixed(d)+"%";
+const cls=v=>v>=0?"pos":"neg";
+async function load(){
+  const r3=await (await fetch("iter3.json")).json();
+  const r2=await (await fetch("iter2.json")).json();
+  render(r3, r2);
+}
+function render(r3, r2){
+  const ml=r3.multi_league;
+  const mlRows=ml.map(r=>`<tr><td><b>${r.league}</b></td><td>${r.n_matches}</td><td>${r.bets}</td><td class="${cls(r.roi)}">${pct(r.roi)}</td><td class="${cls(r.yield)}">${pct(r.yield)}</td><td class="${cls(r.baseline_roi)}">${r.league==="POOLED"?"—":pct(r.baseline_roi)}</td><td>${r.beats_baseline===null?"—":(r.beats_baseline?"❌ нет / ✅ да".split(" / ")[1]:"❌")}</td></tr>`).join("");
+  const ab=r3["ablation_val2023/24"];
+  const abRows=Object.entries(ab).map(([k,v])=>`<tr><td>${k}</td><td class="${v.logloss<0.95?"pos":""}">${v.logloss.toFixed(4)}</td></tr>`).join("");
+  const wta=r3.wta, live=r2.live_2526;
+  document.getElementById("app").innerHTML=`
+  <section><h2>1️⃣ Мульти-лига: Test 2024/25 (одна и та же модель, Pinnacle closing)</h2>
+    <table><tr><th>Лига</th><th>Матчей</th><th>Ставок</th><th>ROI</th><th>Yield</th><th>Baseline ROI</th><th>Бьёт baseline?</th></tr>${mlRows}</table>
+    <img class="chart" src="multi_league.png" alt="multi-league">
+    <div class="verdict">Модель проигрывает на всех лигах, включая pooled (yield −15.1%).Нет ни одной лиги с устойчивым преимуществом — рыночная эффективность универсальна, а не специфика EPL.</div>
+  </section>
+  <section><h2>2️⃣ Причинная аблация: какие блоки фич несут информацию (EPL val 2023/24)</h2>
+    <table><tr><th>Фич-блок</th><th>logloss (меньше = лучше; рынок = 0.9461)</th></tr>${abRows}</table>
+    <img class="chart" src="ablation.png" alt="ablation">
+    <div class="verdict"><b>Рынок (захардкоженные implied probs) logloss 0.9461 — лучший из всех.</b> Ни один наш блок (Elo, форма, сезонные метрики, H2H, удары/xG-proxy) по отдельности не дотягивается даже до рынка. Удары в цель (xG-proxy) дают лучший модельный результат (all+shots: 0.9688 vs all: 0.9754) — т.е. удары в цель несут <i>некоторую</i> дополнительную информацию внутри модельного класса, но рынок её уже закладывает в коэффиценты. Новостная/составская инфа с адекватных источников была бы следующим шагом, но бесплатных поставщиков нет (Understat/FBref закрыты анти-ботом).</div>
+  </section>
+  <section><h2>3️⃣ WTA: Test 2025</h2>
+    <div class="verdict">Модель ${wta.model}, accuracy ${pct(wta.test_accuracy_2025,1)}. Ставок ${wta["2025_flat_2"].n_bets}, yield <b class="${cls(wta["2025_flat_2"].yield_pct)}">${pct(wta["2025_flat_2"].yield_pct)}</b> — edge нет (paint: market опять эффективен).</div>
+  </section>
+  <section><h2>4️⃣ 🟢 Live-пул EPL 2025/26 (paper, форвард-тест)</h2>
+    <img class="chart" src="live_pool.png" alt="live pool">
+    <div class="verdict">Модель (train: 20/21–24/25, гиперпараметры зафиксированы ДО начала сезона) на 185 сыгранных value-ставках: побед ${live.wins}, ROI flat 1% = <b class="pos">${pct(live.roi_so_far)}</b>, yield ≈ +19%.<br>
+    <b>Средний PnL за месяц: Aug +11.7%, Sep +10.1%, Oct +9.5%, Nov +11.4%, Dec +0.5%, Jan −7.9%</b> — сильный старт с затуханием к зиме.<br>
+    Статистика: ≈ +1.5σ (p≈0.13 при n=185) — выше нуля, но НЕ значимо (порог значимости p<0.05 потребовал бы t≈2). Требуется: (1) досезонный долив ставки (целый год), (2) CLV-мониторинг против closing линии, (3) не увеличивать банк. Пока это paper trading, не «золотая жила».</div>
+  </section>`;
+}
+load();
+</script>
+</body>
+</html>
