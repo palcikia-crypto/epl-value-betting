@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EPL Value Betting — Backtest Dashboard</title>
+<style>
+  :root { --bg:#0e1117; --card:#161b22; --fg:#e6edf3; --muted:#8b949e; --red:#f85149; --green:#3fb950; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; padding:24px; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:20px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:20px; }
+  .card { background:var(--card); border:1px solid #21262d; border-radius:10px; padding:14px 16px; }
+  .card .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  .card .value { font-size:24px; font-weight:700; margin-top:6px; }
+  .pos { color:var(--green); } .neg { color:var(--red); }
+  section h2 { font-size:16px; margin:18px 0 10px; color:var(--accent); }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; font-size:14px; }
+  th,td { padding:10px 14px; text-align:left; border-bottom:1px solid #21262d; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  img.chart { max-width:100%; background:var(--card); border:1px solid #21262d; border-radius:10px; margin:8px 0 16px; }
+  ul.flags { background:var(--card); border:1px solid #21262d; border-radius:10px; padding:14px 14px 14px 32px; font-size:14px; }
+  .verdict { background:linear-gradient(135deg,#1a1f2b,#161b22); border:1px solid #30363d; border-radius:12px; padding:18px; margin-top:8px; font-size:15px; line-height:1.6; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:900px){ .two-col{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<h1>⚽ EPL Value Betting — Backtest Dashboard</h1>
+<div class="sub">5 сезонов английской Премьер-лиги (2020/21–2024/25) · football-data.co.uk · Pinnacle closing odds · финальный тест: <b>2024/25</b></div>
+<div id="app">Загрузка результатов…</div>
+<script>
+const pct = (x, d=2) => (x*100).toFixed(d) + "%";
+const cls = v => v >= 0 ? "pos" : "neg";
+async function load() {
+  try {
+    const res = await fetch("results.json");
+    const r = await res.json();
+    render(r);
+  } catch(e) {
+    document.getElementById("app").innerHTML =
+      '<div class="verdict">⚠️ results.json не найден. Сначала запусти <code>python3 run_pipeline.py</code>.</div>';
+  }
+}
+function render(r) {
+  const t = r.test, b = r.baseline;
+  const kpis = [
+    {label:"Модель", value:r.best_model, color:""},
+    {label:"ROI (Test 24/25)", value:pct(t.roi), color:cls(t.roi)},
+    {label:"Yield", value:pct(t.yield_pct), color:cls(t.yield_pct)},
+    {label:"Ставок", value:t.n_bets, color: t.n_bets>=50?"":"neg"},
+    {label:"Win Rate", value:pct(t.win_rate,1), color:""},
+    {label:"Max Drawdown", value:pct(t.max_drawdown,1), color:"neg"},
+    {label:"Baseline ROI (фаворит)", value:pct(b.roi), color:cls(b.roi)},
+    {label:"Test Accuracy", value:pct(r.test_accuracy,1), color: r.test_accuracy>0.7?"neg":""},
+  ];
+  const wfRows = r.walk_forward.map(w =>
+    `<tr><td>${w.train}</td><td>${w.test}</td><td class="${cls(w.roi)}">${pct(w.roi)}</td><td class="${cls(w.yield)}">${pct(w.yield)}</td><td>${w.bets}</td><td>${pct(w.win_rate,1)}</td></tr>`).join("");
+  const thRows = Object.entries(r.test_by_threshold).map(([k,v]) =>
+    `<tr><td>edge > ${k}</td><td>${v.n_bets}</td><td class="${cls(v.roi)}">${pct(v.roi)}</td><td class="${cls(v.yield_pct)}">${pct(v.yield_pct)}</td><td>${pct(v.win_rate,1)}</td><td>${pct(v.max_drawdown,1)}</td></tr>`).join("");
+  const flags = r.red_flags.length ? r.red_flags.map(f=>`<li>${f}</li>`).join("") : "<li>нет</li>";
+  const verdict = (t.roi < 0 || t.n_bets < 50)
+    ? "❌ <b>Модель не демонстрирует устойчивого преимущества. Не рекомендуется для реальных ставок.</b><br><span style='color:var(--muted)'>Test ROI отрицательный, модель не бьёт baseline «всегда на фаворита» (Pinnacle closing odds эффективны — predictive edge не сохраняется после маржи букмекера).</span>"
+    : (r.red_flags.some(f=>f.includes("baseline"))
+       ? "❌ Модель не бьёт baseline. Вердикт отрицательный."
+       : "✅ Модель показывает преимущество на исторических данных. Следующий шаг — paper trading 3 месяца.");
+  document.getElementById("app").innerHTML = `
+    <div class="grid">${kpis.map(k=>`<div class="card"><div class="label">${k.label}</div><div class="value ${k.color}">${k.value}</div></div>`).join("")}</div>
+    <section><h2>Test 2024/25 — пороги edge</h2>
+      <table><tr><th>Стратегия</th><th>Ставок</th><th>ROI</th><th>Yield</th><th>Win rate</th><th>Max DD</th></tr>${thRows}</table></section>
+    <section><h2>Кривая банка</h2><img class="chart" src="bank_curve.png" alt="bank curve"></section>
+    <section class="two-col">
+      <div><h2>Калибровка (Test)</h2><img class="chart" src="reliability.png"></div>
+      <div><h2>Калибровка (Validation)</h2><img class="chart" src="reliability_val.png"></div>
+    </section>
+    <section><h2>Walk-Forward (окно 2 сезона → следующий, тест)</h2>
+      <img class="chart" src="walkforward.png" alt="walk-forward">
+      <table><tr><th>Train</th><th>Test</th><th>ROI</th><th>Yield</th><th>Ставок</th><th>Win rate</th></tr>${wfRows}</table></section>
+    <section><h2>🚩 Red Flags</h2><ul class="flags">${flags}</ul></section>
+    <section><h2>Заключение</h2><div class="verdict">${verdict}</div></section>`;
+}
+load();
+</script>
+</body>
+</html>
