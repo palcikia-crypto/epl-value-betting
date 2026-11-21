@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Итерация 4 — Полный форвард-тест, Dixon-Coles, Steam</title>
+<style>
+  :root { --bg:#0e1117; --card:#161b22; --fg:#e6edf3; --muted:#8b949e; --red:#f85149; --green:#3fb950; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; padding:24px; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  h2 { font-size:17px; margin:18px 0 6px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:14px; }
+  nav a { color:var(--accent); text-decoration:none; margin-right:16px; font-size:14px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; font-size:14px; margin:10px 0; }
+  th,td { padding:9px 12px; text-align:left; border-bottom:1px solid #21262d; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  img.chart { max-width:100%; background:var(--card); border:1px solid #21262d; border-radius:10px; margin:8px 0; }
+  .verdict { background:linear-gradient(135deg,#1a1f2b,#161b22); border:1px solid #30363d; border-radius:12px; padding:16px; margin-top:12px; font-size:15px; line-height:1.6; }
+  .pos { color:var(--green); } .neg { color:var(--red); } .mut { color:var(--muted); }
+</style>
+</head>
+<body>
+<h1>🔬 Итерация 4</h1>
+<div class="sub">Полный форвард-тест live-пула 2025/26 + CLV · Dixon-Coles · Стэкинг модель×рынок · Steam · Перекалибровка рынка</div>
+<nav><a href="index.html">EPL бэктест</a><a href="iter2.html">Итерация 2</a><a href="iter3.html">Итерация 3</a><a href="iter4.html">Итерация 4</a></nav>
+<div id="app">Загрузка…</div>
+<script>
+const pct=(x,d=2)=>(x*100).toFixed(d)+"%";
+const cls=v=>v>=0?"pos":"neg";
+async function load(){
+  const r4=await (await fetch("iter4.json")).json();
+  render(r4);
+}
+function render(r4){
+  const fwd=r4.forward, dc=r4.dixon_coles, stk=r4.stacking, sm=r4.steam, rec=r4.recalibration;
+  const mon=fwd.monthly, mRows=Object.entries(mon).map(([k,v])=>
+    `<tr><td>${k}</td><td class="${cls(v)}" style="${v>=0?'color:var(--green)':'color:var(--red)'}">${v>=0?"+":""}${v}</td></tr>`).join("");
+  document.getElementById("app").innerHTML=`
+  <section><h2>1️⃣ 🟢→⚫ Live-пул EPL 2025/26: ПОЛНЫЙ сезон (форвард-тест завершён)</h2>
+    <img class="chart" src="forward_full.png" alt="forward">
+    <div class="verdict">Сезон завершён (380 матчей). Правила пула зафиксированы ДО начала сезона (итерация 2) — это чистый форвард-тест.<br>
+    Ставок: <b>${fwd.played}</b> (Pinnacle: ${fwd.src_counts.PS||0}, B365 где Pinnacle нет: ${fwd.src_counts.B365||0}), побед: ${fwd.wins}.<br>
+    <b>ROI flat 1% = <span class="pos">${pct(fwd.roi)}</span>, yield = <span class="pos">${pct(fwd.yield_pct)}</span>, Max DD = ${pct(fwd.max_drawdown,1)}</b><br>
+    Средний PnL по месяцам: Aug +1169, Sep +1013, Oct +948, Nov +1144, Dec +52, Jan −329, Feb −810, Mar +826, Apr −298, May +724.<br>
+    <b class="mut">CLV против closing-линии: ${fwd.mean_clv===null?"—":pct(fwd.mean_clv,3)} (положительных ${pct(fwd.clv_positive_share,1)}, n=${fwd.clv_n})</b> — мы получаем в среднем РОВНО closing-линию: закл. рынок с нами согласен, «проскока» нет.<br>
+    <b class="neg">Статистика: t = ${fwd.t_stat.toFixed(2)} (p ≈ 0.16 при n=${fwd.played}) — НЕ значимо.</b> ROI по книгам: Pinnacle ${pct(fwd.roi_by_src.PS||0)}, B365 ${pct(fwd.roi_by_src.B365||0)}.<br>
+    Вердикт: плюсовой сезон — скорее дисперсия при серии попаданий на high-odds ставках. Для следующего сезона 2026/27: пул перезапускается, критерий значимости — t ≥ 2 на ≥ 400 ставках + устойчиво положительный CLV.</div>
+  </section>
+  <section><h2>2️⃣ Dixon-Coles (Пуассон с затуханием времени) — классика, честный Test 2024/25</h2>
+    <div class="verdict">xi-затухание тюнинговано на val (0.0–0.003, всё ≈ 0.9435 — устойчиво).<br>
+    Val logloss <b class="pos">0.9435</b> (лучше «наивного» market-only блока из итерации 3 — 0.9461, но хуже чистого devig-рынка 0.9085).<br>
+    <b>Test logloss = <span class="neg">${dc.test_logloss.toFixed(4)}</span>, accuracy = ${pct(dc.test_accuracy,1)}</b> — сила команд 22/23 не переносится на 24/25.<br>
+    ROI = <b class="neg">${pct(dc.backtest.roi)}</b> (${dc.backtest.bets} ставок, yield ${pct(dc.backtest.yield)}), baseline «фаворит» = ${pct(dc.baseline_roi)}.<br>
+    Вердикт: DC красив математически, но стабильно хуже рынка на реальном Test.</div>
+  </section>
+  <section><h2>3️⃣ Стэкинг: модель × рынок (LogReg на лог-отношениях)</h2>
+    <div class="verdict">Val logloss: market <b>${stk.val_logloss.market.toFixed(4)}</b> · модель ${stk.val_logloss.model.toFixed(4)} · стэк <span class="neg">${stk.val_logloss.stack.toFixed(4)}</span> — стэк хуже обоих входов (переобучение LogReg на 380 матчах).<br>
+    Test: market ${stk.test_logloss.market.toFixed(4)}, стэк ${stk.test_logloss.stack.toFixed(4)}, ROI стэка ${pct(stk.backtest.roi)} (${stk.backtest.bets} ставок).<br>
+    Вывод: смешивать модель с рынком линейным стэком не спасает — рыночный сигнал доминирует.</div>
+  </section>
+  <section><h2>4️⃣ Steam: движение opening → closing Pinnacle (5 сезонов, ${1636+1219+1628} ставок суммарно)</h2>
+    <div class="verdict">Chase steam ≥2%: yield <span class="pos">${pct(sm["chase_0.02"].yield)}</span> (t=${sm["chase_0.02"].t_stat}) — незначимо.<br>
+    Chase ≥4%: yield ${pct(sm["chase_0.04"].yield)} (t=${sm["chase_0.04"].t_stat}). Fade ≥2%: yield <span class="neg">${pct(sm["fade_0.02"].yield)}</span> (t=${sm["fade_0.02"].t_stat}).<br>
+    Вывод: линейное движение в EPL почти несёт информацию, но на закрытии всё уже в цене — арбитража нет при обеих пороговых.</div>
+  </section>
+  <section><h2>5️⃣ Перекалибровка рынка (isotonic по прошлым исходам)</h2>
+    <div class="verdict">Val: market ${rec.val_logloss.market.toFixed(5)} vs recal <span class="neg">${rec.val_logloss.recal.toFixed(5)}</span>. Test: market ${rec.test_logloss.market.toFixed(5)} vs recal ${rec.test_logloss.recal.toFixed(5)}.<br>
+    ROI по «свернутым» value-ставкам: ${pct(rec.backtest.roi)} (${rec.backtest.bets} ставок, yield ${pct(rec.backtest.yield)}) — market мизер хуже/лучше в шуме; уширяем вывод: <b>рынок правильно откалиброван сам по себе.</b></div>
+  </section>
+  <section><h2>📊 Сводка по всем подходам</h2>
+    <img class="chart" src="iter4_variants.png" alt="variants">
+    <div class="verdict"><b>Итог итерации 4:</b> единственный плюс — forward-тест live-пула (+48.5% ROI / yield +13.7%), но t = ${fwd.t_stat.toFixed(2)} и CLV ≈ 0 (закрытие подтверждает наши котировки) → преимущества нет, есть удачная дисперсия на длинных коэффициентах.<br>
+    Ни Dixon-Coles, ни стэкинг, ни steam, ни рекалибровка рынка не дают значимого edge против Pinnacle closing. Рынок остаётся эффективным и в 4-й итерации.</div>
+  </section>`;
+}
+load();
+</script>
+</body>
+</html>
