@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Итерация 6 — LIVE-данные НХЛ, стекинг против рынка, портфель</title>
+<style>
+  :root { --bg:#0e1117; --card:#161b22; --fg:#e6edf3; --muted:#8b949e; --red:#f85149; --green:#3fb950; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; padding:24px; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  h2 { font-size:17px; margin:18px 0 6px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:14px; }
+  nav a { color:var(--accent); text-decoration:none; margin-right:16px; font-size:14px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; font-size:14px; margin:10px 0; }
+  th,td { padding:9px 12px; text-align:left; border-bottom:1px solid #21262d; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  img.chart { max-width:100%; background:var(--card); border:1px solid #21262d; border-radius:10px; margin:8px 0; }
+  .verdict { background:linear-gradient(135deg,#1a1f2b,#161b22); border:1px solid #30363d; border-radius:12px; padding:16px; margin-top:12px; font-size:15px; line-height:1.6; }
+  .pos { color:var(--green); } .neg { color:var(--red); } .mut { color:var(--muted); }
+</style>
+</head>
+<body>
+<h1>📡 Итерация 6</h1>
+<div class="sub">Live play-by-play НХЛ · Причинность расписания (back-to-back) · Стекинг против рынка · Портфельные стратегии + Монте-Карло</div>
+<nav><a href="index.html">EPL бэктест</a><a href="iter2.html">Итерация 2</a><a href="iter3.html">Итерация 3</a><a href="iter4.html">Итерация 4</a><a href="iter5.html">Итерация 5</a></nav>
+<div id="app">Загрузка…</div>
+<script>
+const pct=(x,d=1)=>(x*100).toFixed(d)+"%";
+const cls=v=>v>=0?"pos":"neg";
+fetch("iter6.json").then(r=>r.json()).then(j=>{
+const nd=j.nhl_deep, ig=j.nhl_ingame, dv=j.divergence, pf=j.portfolio, mc=pf.mc_no_edge;
+const nameB={home_b2b_away_rested:"Хозяин B2B, гость свежий (n=#)",away_b2b_home_rested:"Гость B2B, хозяин свежий (n=#)",both_b2b:"Оба на B2B (n=#)",both_rested:"Оба свежие (n=#)"};
+let restRows=nd.rest_causality.map(r=>`<tr><td>${nameB[r.bucket].replace("#",r.n)}</td><td>${r.n}</td><td>${pct(r.home_win_rate)}</td><td class="mut">${pct(r.ci95[0])} … ${pct(r.ci95[1])}</td><td class="${cls(r.diff_vs_all)}">${r.diff_vs_all>0?"+":""}${pct(r.diff_vs_all)}</td></tr>`).join("");
+let curveRows=ig.curve.map(c=>`<tr><td>${c.band} мин</td><td>${c.n}</td><td>${pct(c.accuracy)}</td><td>${pct(c.home_lead_share,0)}</td></tr>`).join("");
+let divRows=dv.value_only.map(r=>`<tr><td>d ${r.bucket}</td><td>${r.n}</td><td>${pct(r.hit_rate)}</td><td>${pct(r.market_claim)}</td><td class="${cls(r.edge_gap)}">${r.edge_gap>0?"+":""}${pct(r.edge_gap)}</td></tr>`).join("");
+let pfRows=[["Все value-ставки,1% банка",pf.all_flat],["Топ-3 по эджу в день",pf.top3_per_day],["1 ставка в день (макс эдж)",pf.top1_per_day],["Половина с сильным расхождением с рынком",pf.high_divergence_half],["Половина согласованных с рынком",pf.low_divergence_half]].map(([n,v])=>`<tr><td>${n}</td><td>${v.bets}</td><td class="${cls(v.roi)}">${pct(v.roi)}</td><td class="${cls(v.yield)}">${pct(v.yield)}</td><td>${pct(v.wr)}</td><td>${pct(v.dd)}</td></tr>`).join("");
+document.getElementById("app").innerHTML=`
+
+<h2>1. НХЛ LIVE: предсказуемость по ходу матча (play-by-play)</h2>
+<div class="mut">692 игры скачаны по ходу (events каждая ~4 мин, ${(ig.n_train/17).toFixed(0)} train / ${ig.n_test_games} test игр, состояния ${ig.n_states}). Модель: logistic на [разница счёта, время, разница бросков].</div>
+<img class="chart" src="iter6_ingame.png">
+<table><tr><th>Минут прошло</th><th>Состояний</th><th>Точность</th><th>Ведёт хозяин</th></tr>${curveRows}</table>
+<div class="verdict">• Точность растёт с ${pct(ig.curve[0].accuracy)} (начало) до ${pct(ig.curve[ig.curve.length-1].accuracy)} (63-я минута) — классическая кривая накопления информации.<br>
+• АБЛЯЦИЯ: «только счёт+время» даёт ${pct(ig.accuracy_score_only)} против ${pct(ig.overall_accuracy)} с бросками (AUC ${ig.auc} vs ${ig.auc_score_only}) — <b>броски в створ почти не добавляют ничего поверх счёта</b>. Дополнительная статистика в реальном времени ≈ уже «в цене».</div>
+
+<h2>2. Причинность расписания: back-to-back (2 915 матчей НХЛ)</h2>
+<img class="chart" src="iter6_rest.png">
+<table><tr><th>Ситуация</th><th>n</th><th>Побед хозяев</th><th>95% ДИ</th><th>vs средняя ${pct(nd.home_win_all)}</th></tr>${restRows}</table>
+<div class="verdict">• <b>Единственный найденный за все итерации фактор с заметным эффектом:</b> когда ГОСТИЯ команда играет вторые сутки подряд (B2B), хозяева выигрывают ${pct(nd.rest_causality[1].home_win_rate)} против базовых ${pct(nd.home_win_all)} — плюс ${pct(nd.rest_causality[1].diff_vs_all)} на n=217 (95% ДИ ${pct(nd.rest_causality[1].ci95[0])}…${pct(nd.rest_causality[1].ci95[1])}, ДИ выше базовой линии).<br>
+• Обратная ситуация (хозяин на B2B) — минус ${pct(-nd.rest_causality[0].diff_vs_all)}, но n=66, ДИ широкий, z-тест против гипотезы z=${nd.z_away_b2b_vs_home_b2b}.<br>
+• НО: модель с этими фичами (${pct(nd.model_full.accuracy)}) НЕ обошла чистый Elo (${pct(nd.elo_only.accuracy)}) — 619 матчей train мало, и рынок график НХЛ знает давно. Показатель существует, отыграть его против коэффициентов — не доказано.</div>
+
+<h2>3. Футбол: что в тех матчах, где модель расходится с рынком (тест 2024/25)</h2>
+<div class="mut">d =p(модели) − p(рынка, devig) на стороне максимального эджа. «VALUE» = фильтр edge>0.05.</div>
+<table><tr><th>Расхождение d</th><th>Ставок</th><th>Фактическая доля заходов</th><th>Рынок обещал</th><th>Разница</th></tr>${divRows}</table>
+<div class="verdict">• corr(d, попадание) = ${dv.corr_d_hit} — <b>расхождение с рынком НЕ несёт сигнала</b>.<br>
+• Хуже того: в полосе d∈[0.05, 0.09) (главная «value»-полоса) фактический заход ${pct(dv.value_only.find(r=>r.bucket.includes("0.05")).hit_rate)} против обещанных рынком ${pct(dv.value_only.find(r=>r.bucket.includes("0.05")).market_claim)} — <b>модель ошибается вдвое чаще, чем думает</b>. Именно эти ставки дают −36% ROI.<br>
+• Полоса d∈[0.09,∞): заходов больше заявки рынка — но это редкие длинные исходы с кэфом >4 и малыми n; в бэктесте они давали минус.<br>
+• ВЫВОД: «знать что-то, чего не знает рынок», наша модель не может. Расхождение с рынком = ошибка модели, а не эдж.</div>
+
+<h2>4. Портфельные стратегии: «ставить на несколько матчей — заберу выигрыш»?</h2>
+<img class="chart" src="iter6_portfolio.png">
+<table><tr><th>Стратегия</th><th>Ставок</th><th>ROI</th><th>Yield</th><th>Win rate</th><th>Max DD</th></tr>${pfRows}</table>
+<div class="verdict">• Выборка по стратегии «1 ставка в день» — лучше всех (${pct(pf.top1_per_day.roi)}, DD всего ${pct(pf.top1_per_day.dd)}), НО это n=104, статистически неотличимо от нуля; рандом.<br>
+• Топ-3 в день и половина с сильным расхождением с рынком — все в минусе; расширение портфеля только усиливает маржу букмекера.<br>
+• <b>Монте-Карло (4 000 сим. × ${mc.n_bets} ставок, БЕЗ эджа):</b> медианный финал ${mc.median_final.toLocaleString()} из 10 000, P(остаться в плюсе) = ${pct(mc.p_positive)}, но P5 = ${mc.p5_final.toLocaleString()} — «ставить много» превращает удачу в уверенный минус. Диверсификация не создаёт эдж — она ускоряет реализацию отрицательного матожидания.</div>
+
+<h2>Технологии, добавленные в итерации 6</h2>
+<div class="verdict">• <b>NHL play-by-play API</b> (api-web.nhle.com/v1/gamecenter/{id}/play-by-play): 692 игры событий; реконструкция состояний матча (счёт/время/броски) с шагом 4 мин — готовый «live-движок» для future-моделей.<br>
+• <b>Причинные разборы с 95% ДИ и z-тестом</b>: wilson-интервалы + two-proportion z — стандарт отчёта для любых частотных факторов (расписание, усталость).<br>
+• <b>Кривая накопления информации</b>: метод измерения «предскажи сейчас → проверь в конце» для любого спорта с событийными данными.<br>
+• <b>Контроль расхождения с рынком по полосам</b>: обязательный чек «а права ли модель там, где не согласна с рынком» — в итерации 6 показал пустоту, потенциально полезен для выборочного отбора live-сигналов.<br>
+• <b>Монте-Карло портфеля</b>: P(положительного финала) как метрика риска стратегии.</div>
+
+<h2>Итог 6 итерации</h2>
+<div class="verdict">• Live-кривая НХЛ: информация «счёт+время» объясняет почти всё (74% в среднем, 93% к 63-й минуте); броски поверх счёта не добавляют точности.<br>
+• Единственная слабая закономерность за 6 итераций — <b>гость на back-to-back</b> (хозяева +8.7пп, ДИ выше базовой). Но применима ли она против коэффициентов, не доказано: рынок знает расписание.<br>
+• Полосы расхождения с рынком подтверждают: модель не знает ничего сверх рынка; её «value»-полоса — это её же ошибки.<br>
+• Портфель: ставок больше — не лучше. P(плюс) без эджа 43.6% и падает с объёмом. Ответ на вопрос «ставить на несколько матчей чтобы точно забрать» — <b class="neg">нет: без эджа объём только гарантирует маржу букмекера</b>.</div>
+`;
+});
+</script>
+</body>
+</html>
