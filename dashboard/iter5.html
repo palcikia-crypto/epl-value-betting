@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Итерация 5 — Точность, калибровка, совет моделей</title>
+<style>
+  :root { --bg:#0e1117; --card:#161b22; --fg:#e6edf3; --muted:#8b949e; --red:#f85149; --green:#3fb950; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; padding:24px; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  h2 { font-size:17px; margin:18px 0 6px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:14px; }
+  nav a { color:var(--accent); text-decoration:none; margin-right:16px; font-size:14px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; font-size:14px; margin:10px 0; }
+  th,td { padding:9px 12px; text-align:left; border-bottom:1px solid #21262d; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  img.chart { max-width:100%; background:var(--card); border:1px solid #21262d; border-radius:10px; margin:8px 0; }
+  .verdict { background:linear-gradient(135deg,#1a1f2b,#161b22); border:1px solid #30363d; border-radius:12px; padding:16px; margin-top:12px; font-size:15px; line-height:1.6; }
+  .pos { color:var(--green); } .neg { color:var(--red); } .mut { color:var(--muted); }
+</style>
+</head>
+<body>
+<h1>🎯 Итерация 5</h1>
+<div class="sub">Точность по видам спорта · «Сколько лет истории нужно» · Калибровка и ECE · Совет моделей · НХЛ</div>
+<nav><a href="index.html">EPL бэктест</a><a href="iter2.html">Итерация 2</a><a href="iter3.html">Итерация 3</a><a href="iter4.html">Итерация 4</a><a href="iter5.html">Итерация 5</a></nav>
+<div id="app">Загрузка…</div>
+<script>
+const pct=(x,d=1)=>(x*100).toFixed(d)+"%";
+const cls=v=>v>=0?"pos":"neg";
+async function load(){
+  const r5=await (await fetch("iter5.json")).json();
+  render(r5);
+}
+function render(r5){
+  const fb=r5.football.map(r=>`<tr><td><b>${r.league}</b></td><td>${pct(r.accuracy)}</td><td>${r.logloss.toFixed(4)}</td><td>${r.ece.toFixed(3)}</td><td class="mut">${pct(r.market.accuracy)}</td><td class="mut">${r.market.logloss.toFixed(4)}</td><td>${r.accuracy>r.market.accuracy?"✅":"—"}</td></tr>`).join("");
+  const lc=r5.learning_curve.curve.map(r=>`<tr><td>${r.n_train_seasons}</td><td>${pct(r.accuracy)}</td><td>${r.logloss.toFixed(4)}</td><td>${r.brier.toFixed(4)}</td><td>${r.ece.toFixed(3)}</td></tr>`).join("");
+  const mk=r5.learning_curve.market;
+  const nhl=r5.nhl;
+  const cn=r5.council;
+  document.getElementById("app").innerHTML=`
+  <section><h2>1️⃣ Точность прогнозов: футбол vs теннис vs хоккей (честные test-периоды)</h2>
+    <table><tr><th>Лига/Тур</th><th>Наша точность</th><th>Logloss</th><th>ECE</th><th>Рынок (точность)</th><th>Рынок (logloss)</th><th>Модель точнее рынка?</th></tr>${fb}</table>
+    <img class="chart" src="cross_sport.png" alt="cross-sport">
+    <div class="verdict"><b>Рейтинг прогнозируемости (аккуратность pred→verify):</b><br>
+    🥇 Tennis WTA: Elo ${pct(r5.tennis.wta.elo_accuracy)} (рынок ${pct(r5.tennis.wta.market_accuracy)}) на 2351 матчах — ты был прав, теннис проще.<br>
+    🥈 ATP: Elo ${pct(r5.tennis.atp.elo_accuracy)} (рынок ${pct(r5.tennis.atp.market_accuracy)}) на 2507 матчах.<br>
+    🥉 NHL: Elo ${pct(nhl.elo_accuracy)} на ${nhl.n_test} матчах календарного 2024 (финиш 2023/24 + старт 2024/25) (${nhl.n_burnin} на burn-in), доля побед хозяев ${pct(nhl.home_win_share)} — лишь чуть выше базовой линии.<br>
+    Футбол: 45–56% (1X2, 3 класса, случайность = 33.3%), модель <b>нигде не точнее рынка</b> кроме E1 (0.5% края).\n
+    <b>Но точность ≠ edge:</b> точнее предсказывать = чаще угадывать исход; прибыль определяется точностью ВЕРОЯТНОСТЕЙ против коэффициентов, и по ней рынок впереди во всех видах спорта.</div>
+  </section>
+  <section><h2>2️⃣ Сколько лет истории нужно? (обучение на 1..5 сезонах → test 2024/25)</h2>
+    <img class="chart" src="learning_curve.png" alt="learning curve">
+    <table><tr><th>Сезонов истории</th><th>Accuracy</th><th>Logloss</th><th>Brier</th><th>ECE</th></tr>${lc}</table>
+    <div class="verdict"><b>Ответ на «хватит ли года»:</b> НЕТ. Точность монотонно растёт с объёмом истории: 1 сезон — logloss 1.0616, 5 сезонов — <b>${r5.learning_curve.curve[4].logloss.toFixed(4)}</b> (accuracy ${pct(r5.learning_curve.curve[0].accuracy)} → ${pct(r5.learning_curve.curve[4].accuracy)}).<br>
+    Даже с 5 сезонами истории модель не догоняет рынок (logloss ${mk.logloss.toFixed(4)}, accuracy ${pct(mk.accuracy)}). Пробел закрывается не годами истории, а информацией, которой у открытых данных нет (составы, травмы, игровое время).</div>
+  </section>
+  <section><h2>3️⃣ Калибровка (ECE/Brier, test 2024/25)</h2>
+    <div class="verdict">ECE (меньше = лучше): наша модель на 5 сезонах истории ≈ <b>${r5.learning_curve.curve[4].ece.toFixed(3)}</b>, рынок <b>${mk.ece.toFixed(3)}</b>.<br>
+    Brier: модель 0.5963 против рынка 0.5788 — изотоническая калибровка заметно улучшает модель (Brier 0.630 → 0.596 по кривой), но до качества вероятностей рынка мы всё равно не дотягиваем.<br>
+    Это вторая причина (после logloss) того, что value-ставки убыточны: наши вероятности систематически менее точны, чем рыночные.</div>
+  </section>
+  <section><h2>4️⃣ Совет моделей («агенты») — XGBoost + Dixon-Coles + рынок</h2>
+    <div class="verdict">Веса агентов по 1/logloss (val, leak-free): XGBoost ${cn.weights.xgb} (val ${cn.val_logloss.xgb.toFixed(4)}), Dixon-Coles ${cn.weights.dc} (val ${cn.val_logloss.dc.toFixed(4)}), рынок ${cn.weights.market} (val ${cn.val_logloss.market.toFixed(4)}).<br>
+    Test 2024/25: совет acc ${pct(cn.council.accuracy)}, logloss ${cn.council.logloss.toFixed(4)} → <b>хуже чистого рынка</b> (acc ${pct(cn.market.accuracy)}, ${cn.market.logloss.toFixed(4)}).<br>
+    ROI по value-ставкам совета: ${pct(cn.backtest_council.roi, 1)} (${cn.backtest_council.bets} ставок).<br>
+    <b>Вывод: агрегация слабых агентов с рынком НЕ создаёт уверенности выше рынка — рыночный сигнал доминирует.</b></div>
+  </section>
+  <section><h2>5️⃣ Технологии, добавленные в итерации 5</h2>
+    <div class="verdict">• <b>Открытый официальный NHL API</b> (api-web.nhle.com/score/{дата}), 2915 сыгранных матчей 2023-10-01→2025-04-30 собраны в кэш без ключей и оплаты.<br>
+    • Метрики калибровки (ECE/Brier) добавлены в стандартный набор отчёта рядом с ROI.<br>
+    • «Совет моделей» (взвешенный ансамбль) как инструмент агрегирования уверенности — протестирован и признан не улучшающим рынок; оставлен в коде для будущих кастомных агентов (замена весов в <code>iter5/run_iter5.py::council</code>).</div>
+  </section>`;
+}
+load();
+</script>
+</body>
+</html>
