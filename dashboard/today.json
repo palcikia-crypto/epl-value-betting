@@ -1,12 +1,17 @@
 {
- "updated": "2026-11-22T10:38:18.963Z",
- "schema": 2,
- "source": "api-web.nhle.com (initial snapshot; nhl-today workflow refreshes every 30 min)",
- "rows": [
-  {"day":"2026-11-22","away":{"abbr":"CAR","name":"Hurricanes"},"home":{"abbr":"NYR","name":"Rangers"},"tag":"RULE","state":"FUT","start":"2026-11-22T17:30:00Z","score":""},
-  {"day":"2026-11-22","away":{"abbr":"BUF","name":"Sabres"},"home":{"abbr":"TBL","name":"Lightning"},"tag":"RULE","state":"FUT","start":"2026-11-22T22:00:00Z","score":""},
-  {"day":"2026-11-23","away":{"abbr":"EDM","name":"Oilers"},"home":{"abbr":"STL","name":"Blues"},"tag":"RULE","state":"FUT","start":"2026-11-23T00:00:00Z","score":""},
-  {"day":"2026-11-23","away":{"abbr":"PIT","name":"Penguins"},"home":{"abbr":"DAL","name":"Stars"},"tag":"RULE","state":"FUT","start":"2026-11-23T00:00:00Z","score":""},
-  {"day":"2026-11-23","away":{"abbr":"CHI","name":"Blackhawks"},"home":{"abbr":"VAN","name":"Canucks"},"tag":"RULE","state":"FUT","start":"2026-11-23T01:00:00Z","score":""}
- ]
+ "schema": 3,
+ "updated": "2026-11-22T11:02:44.186Z",
+ "source": "api-web.nhle.com",
+ "forward_test": {
+  "season": "2026/27",
+  "n_games": 335,
+  "n_b2b": 25,
+  "b2b_home_win": 0.64,
+  "n_rested": 45,
+  "rested_home_win": 0.4222222222222222,
+  "z": 1.75,
+  "n_b2b_ot": 4,
+  "b2b_ot_home_win": 0.5
+ },
+ "rows": []
 }
