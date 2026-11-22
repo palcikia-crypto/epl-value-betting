@@ -1,3 +1,4 @@
+// Генератор dashboard/today.json (schema 2): NHL расписание + B2B/OT-флаги и вердикт ставки.
 const API = "https://api-web.nhle.com/v1/score/";
 async function main() {
   const now = await (await fetch(API + "now")).json();
@@ -18,24 +19,26 @@ async function main() {
     const j = all[i];
     const day = j.currentDate || dates[i];
     for (const g of (j.games || [])) {
-      const h = g.homeTeam ? g.homeTeam.abbrev : "?";
-      const a = g.awayTeam ? g.awayTeam.abbrev : "?";
-      const ph = lastPlay[h], pa = lastPlay[a];
+      const at = g.awayTeam, ht = g.homeTeam;
+      if (!at || !ht) continue;
+      const ph = lastPlay[ht.abbrev], pa = lastPlay[at.abbrev];
       const gap = (f) => f ? (Date.parse(day) - Date.parse(f.d)) / 3.6e6 : 999;
       const bH = gap(ph) < 48, bA = gap(pa) < 48;
-      let tag = "FRESH";
-      if (bA && bH) tag = "BOTH";
-      else if (bA && pa.ot) tag = "OT";
-      else if (bH && ph.ot) tag = "OTH";
-      else if (bA) tag = "RULE";
-      let score = "";
-      if (g.homeTeam && g.homeTeam.score !== undefined && g.gameState !== "FUT") score = g.awayTeam.score + ":" + g.homeTeam.score;
-      rows.push({ day, m: a + " @ " + h, tag, state: g.gameState, start: g.startTimeUTC, score });
+      let tag = "FRESH", bet = null, why = "Обе команды свежие: преимущества по усталости нет.";
+      if (bA && bH) { tag = "BOTH"; why = "Обе на B2B: эффект взаимно гасится."; }
+      else if (bA && pa.ot) { tag = "OT"; why = "Гость на B2B, но вчера овертайм: преимущество пропадает."; }
+      else if (bH && ph.ot) { tag = "OTH"; why = "Хозяин на B2B: лучше не ставить на хозяина."; }
+      else if (bA) { tag = "RULE"; bet = "HOME"; why = "Гость на B2B (второй матч подряд), хозяин свежий, вчера без OT: рынок исторически недооценивает хозяина (+6.4% yield в бэктесте)."; }
+      const score = (ht.score !== undefined && g.gameState !== "FUT") ? (at.score + ":" + ht.score) : "";
+      rows.push({ day,
+        away: { abbr: at.abbrev, name: (at.name && at.name.default) || at.abbrev },
+        home: { abbr: ht.abbrev, name: (ht.name && ht.name.default) || ht.abbrev },
+        tag, bet, why, state: g.gameState, start: g.startTimeUTC, score });
     }
   }
   rows.sort((x, y) => (x.tag === "RULE" ? 0 : 1) - (y.tag === "RULE" ? 0 : 1) || (x.state === "FUT" ? 0 : 1) - (y.state === "FUT" ? 0 : 1) || x.day.localeCompare(y.day));
   const fs = await import("fs");
-  fs.writeFileSync(new URL("./today.json", import.meta.url), JSON.stringify({ updated: new Date().toISOString(), source: "api-web.nhle.com", rows }, null, 1));
+  fs.writeFileSync(new URL("./today.json", import.meta.url), JSON.stringify({ schema: 2, updated: new Date().toISOString(), source: "api-web.nhle.com", rows }, null, 1));
   console.log("today.json written:", rows.length, "games");
 }
 main().catch((e) => { console.error(e); process.exit(1); });
