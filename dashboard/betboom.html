@@ -6,153 +6,216 @@
 <meta name="theme-color" content="#0e1117">
 <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="description" content="EDGE Dashboard: все сигналы из итераций 1-10 value betting пайплайна">
-<title>EDGE Dashboard - BetBoom Edition (v3)</title>
+<meta name="description" content="EDGE Dashboard: сигналы NHL B2B и матчи на сегодня">
+<title>EDGE Dashboard (v4)</title>
 <style>
-:root{--bg:#0b0e14;--card:#151b26;--card2:#1a2230;--line:#232c3d;--fg:#e8eef7;--mut:#8fa0b5;--grn:#2ee06d;--red:#ff5c5c;--yel:#ffc857;--acc:#4da3ff;--pink:#ff4d9d;}
+:root{--bg:#0b0e14;--card:#151b26;--card2:#1a2230;--line:#232c3d;--fg:#e8eef7;--mut:#8fa0b5;--grn:#2ee06d;--red:#ff5c5c;--yel:#ffc857;--acc:#4da3ff;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding-bottom:80px;max-width:720px;margin:0 auto;}
-header{padding:18px 16px 8px;background:var(--bg);position:relative;z-index:9;}
-h1{font-size:22px;letter-spacing:.02em}
-h1 span{color:var(--acc)}
+body{background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;max-width:720px;margin:0 auto;}
+header{padding:18px 16px 8px;background:var(--bg);}
+h1{font-size:22px;}h1 span{color:var(--acc)}
 .sub{color:var(--mut);font-size:12.5px;margin-top:4px}
-.tabbar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding-bottom:8px}
-.tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 16px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.tab{white-space:nowrap;flex:0 0 auto}
+.tabbar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 16px 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .tabs::-webkit-scrollbar{display:none}
-.tab{flex:0 0 auto;padding:9px 15px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--mut);font-size:13.5px;font-weight:600;cursor:pointer}
-.tab.on{background:var(--acc);border-color:var(--acc);color:#fff}
-.wrap{padding:0 14px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:8px 0 4px}
-.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px}
-.kpi .l{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-.kpi .v{font-size:22px;font-weight:800;margin-top:5px;font-variant-numeric:tabular-nums}
-.kpi .n{font-size:11.5px;color:var(--mut);margin-top:2px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin:12px 0}
-h2{font-size:16px;margin:16px 2px 2px;display:flex;align-items:center;gap:8px}
-.pill{font-size:10.5px;padding:3px 9px;border-radius:999px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.pill.sig{background:rgba(46,224,109,.14);color:var(--grn)}
-.pill.warn{background:rgba(255,200,87,.14);color:var(--yel)}
-.pill.dead{background:rgba(255,92,92,.14);color:var(--red)}
-.pill.exp{background:rgba(77,163,255,.14);color:var(--acc)}
-.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;font-size:14px}
-.row+.row{border-top:1px solid var(--line)}
-.row b{font-variant-numeric:tabular-nums}
-.bar{height:7px;border-radius:99px;background:var(--line);overflow:hidden;margin:4px 0 10px}
-.bar>i{display:block;height:100%;border-radius:99px}
-.tag{font-size:11.5px;color:var(--mut);line-height:1.5}
-.note{border-left:3px solid var(--acc);padding:8px 12px;background:var(--card2);border-radius:8px;font-size:13.5px;line-height:1.55;margin-top:10px}
-.verdict{background:linear-gradient(135deg,#142033,#151b26);border:1px solid #2b3b57;border-radius:14px;padding:16px;font-size:14.5px;line-height:1.6}
-.gr{color:var(--grn)} .rd{color:var(--red)} .yl{color:var(--yel)} .am{color:var(--acc)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:480px){.grid2{grid-template-columns:1fr}}
-footer{color:var(--mut);font-size:11.5px;padding:22px 16px;line-height:1.6}
-.pill-live{display:inline-block;width:7px;height:7px;border-radius:999px;background:var(--grn);margin-right:6px;box-shadow:0 0 6px var(--grn)}
+.tab{white-space:nowrap;flex:0 0 auto;padding:10px 16px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--mut);font-size:14px;font-weight:600;}
+.tab.on{background:var(--acc);border-color:var(--acc);color:#fff;}
+.wrap{padding:4px 14px 20px;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:10px 0 4px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;}
+.kpi .l{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.05em;}
+.kpi .v{font-size:22px;font-weight:800;margin-top:5px;}
+.kpi .n{font-size:11.5px;color:var(--mut);margin-top:2px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin:12px 0;}
+h2{font-size:16px;margin:16px 2px 4px;}
+.pill{font-size:10.5px;padding:3px 9px;border-radius:999px;font-weight:700;text-transform:uppercase;vertical-align:2px;}
+.pill.sig{background:rgba(46,224,109,.14);color:var(--grn)}.pill.warn{background:rgba(255,200,87,.16);color:var(--yel)}.pill.dead{background:rgba(255,92,92,.14);color:var(--red)}.pill.exp{background:rgba(77,163,255,.14);color:var(--acc)}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;font-size:14px;}
+.row+.row{border-top:1px solid var(--line);}
+.row b{font-variant-numeric:tabular-nums;}
+.bar{height:7px;border-radius:99px;background:var(--line);overflow:hidden;margin:4px 0 10px;}
+.bar i{display:block;height:100%;border-radius:99px;}
+.tag{font-size:11.5px;color:var(--mut);line-height:1.55;margin-top:6px;}
+.note{border-left:3px solid var(--acc);padding:9px 12px;background:var(--card2);border-radius:8px;font-size:13.5px;line-height:1.55;margin-top:10px;}
+.verdict{background:linear-gradient(135deg,#142033,#151b26);border:1px solid #2b3b57;border-radius:14px;padding:16px;font-size:14.5px;line-height:1.6;margin:12px 0;}
+.gr{color:var(--grn)}.rd{color:var(--red)}.yl{color:var(--yel)}.am{color:var(--acc)}
+.gcard{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card2);margin:8px 0;}
+.gcard.rule{border-color:var(--grn);}
+.gm{font-weight:800;font-size:15px;}
+.gmeta{color:var(--mut);font-size:12px;margin-top:2px;}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:800;margin-top:6px;}
+.b-rule{background:rgba(46,224,109,.2);color:var(--grn);}
+.b-ot{background:rgba(255,200,87,.18);color:var(--yel);}
+.b-fresh{background:rgba(77,163,255,.14);color:var(--acc);}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+td{padding:6px 4px;border-bottom:1px solid var(--line);}
+footer{color:var(--mut);font-size:11.5px;padding:16px;line-height:1.6;}
 </style>
 </head>
 <body>
-<header><h1>🎯 EDGE <span>DASHBOARD</span></h1>
-<div class="sub"><span class="pill-live"></span>Сигналы из итераций 1-10 · epl-value-betting · обновлено 22.11.2026</div></header>
-<div class="tabbar"><div class="tabs" role="tablist">
+<header><h1>🎯 EDGE <span>DASHBOARD</span> (v4)</h1>
+<div class="sub">● Сигналы NHL B2B · epl-value-betting · 22.11.2026</div></header>
+<div class="tabbar"><div class="tabs">
 <button class="tab on" data-t="all">Всё</button>
 <button class="tab" data-t="today">📅 Сегодня</button>
-<button class="tab" data-t="nhl">🏒 Хоккей B2B</button>
+<button class="tab" data-t="nhl">🏒 Хоккей</button>
 <button class="tab" data-t="foot">⚽ Футбол</button>
-<button class="tab" data-t="fat">😴 Усталость</button>
 <button class="tab" data-t="wl">🔍 Watchlist</button>
 </div></div>
 <div class="wrap">
-<section data-s="all nhl foot fat wl"><div class="kpis">
-<div class="kpi"><div class="l">Топ-сигнал (NHL B2B)</div><div class="v gr">z = 3.34</div><div class="n">10 сезонов, 9 921 игра, p = 0.0008</div></div>
-<div class="kpi"><div class="l">Правило B2B (бэктест)</div><div class="v am">+6.4%</div><div class="n">yield, n = 349, t = 1.37</div></div>
-<div class="kpi"><div class="l">Футбол (модели)</div><div class="v rd">−15.1%</div><div class="n">pooled yield, 6 лиг</div></div>
-<div class="kpi"><div class="l">Golden rule</div><div class="v" style="font-size:15px;line-height:1.35">Гость на B2B<br>и не после OT</div><div class="n">единственное терпимое правило</div></div>
+<section data-s="today all nhl">
+<h2>📅 Матчи сегодня [LIVE]</h2>
+<div id="rulebox"></div>
+<div id="gwrap"><div class="tag">Загружаю календарь NHL...</div></div>
+<div class="note">Бейджи: <b class="gr">ГОСТЬ B2B</b> - по правилу ставка на хозяина (1-2% банка). <b class="yl">B2B + OT ВЧЕРА</b> - пропуск. <span class="am">СВЕЖИЕ</span> - ставки нет. Время - в твоей зоне. Обновление раз в 2 минуты.</div>
+</section>
+<section data-s="nhl foot wl all"><div class="kpis">
+<div class="kpi"><div class="l">Топ-сигнал</div><div class="v gr">z = 3.34</div><div class="n">10 сезонов NHL, p = 0.0008</div></div>
+<div class="kpi"><div class="l">Бэктест правила</div><div class="v am">+6.4%</div><div class="n">yield, n = 349, t = 1.37</div></div>
+<div class="kpi"><div class="l">Футбол (модели)</div><div class="v rd">-15.1%</div><div class="n">pooled yield, 6 лиг</div></div>
+<div class="kpi"><div class="l">Golden rule</div><div class="v" style="font-size:15px;line-height:1.35">Гость B2B<br>не после OT</div><div class="n">ставка на хозяина</div></div>
 </div></section>
 <section data-s="nhl all">
 <h2>🏒 Гость на back-to-back: рынок недооценивает <span class="pill sig">значимо</span></h2>
 <div class="card">
-<div class="row"><span>Домашние победы, гость на B2B</span><b class="gr">58.8%</b></div><div class="bar"><i style="width:58.8%;background:var(--grn)"></i></div>
-<div class="row"><span>Домашние победы, гость свежий (база)</span><b class="am">54.2%</b></div><div class="bar"><i style="width:54.2%;background:var(--acc)"></i></div>
-<div class="row"><span>Дом хозяин на B2B (для фейда)</span><b class="rd">47.8%</b></div><div class="bar"><i style="width:47.8%;background:var(--red)"></i></div>
-<div class="tag">Пул 10 сезонов NHL (9921 игра): n = 1521 vs 7398, z = 3.34, p = 0.0008. Свежий сезон 2025/26: 60.9% (n = 197) vs 49.8% (n = 954). Эффект старый и воспроизводится каждый сезон.</div>
+<div class="row"><span>Гость на B2B</span><b class="gr">58.8%</b></div><div class="bar"><i style="width:58.8%;background:var(--grn)"></i></div>
+<div class="row"><span>Гость свежий (база)</span><b class="am">54.2%</b></div><div class="bar"><i style="width:54.2%;background:var(--acc)"></i></div>
+<div class="row"><span>Хозяин на B2B (фейд)</span><b class="rd">47.8%</b></div><div class="bar"><i style="width:47.8%;background:var(--red)"></i></div>
+<div class="tag">Пул 10 сезонов (9921 игра): n = 1521 vs 7398, z = 3.34, p = 0.0008. Сезон 2025/26: 60.9% (n=197) vs 49.8% (n=954).</div>
 </div>
-<h2>📅 Стабильность по сезонам</h2><div class="card">
-<div class="row"><span>2024 · n=217</span><b>62.7% vs 52.4%</b></div><div class="bar"><i style="width:62.7%;background:var(--grn)"></i></div>
-<div class="row"><span>2023 · n=197</span><b>58.9% vs 52.4%</b></div><div class="bar"><i style="width:58.9%;background:var(--grn)"></i></div>
-<div class="row"><span>2022 · n=239</span><b>59.8% vs 51.4%</b></div><div class="bar"><i style="width:59.8%;background:var(--grn)"></i></div>
-<div class="row"><span>2021 · n=121</span><b>62.0% vs 53.0%</b></div><div class="bar"><i style="width:62%;background:var(--grn)"></i></div>
-<div class="row"><span>2025 · n=134</span><b>59.7% vs 57.2%</b></div><div class="bar"><i style="width:59.7%;background:var(--yel)"></i></div>
-<div class="row"><span>2020 · n=90</span><b>50.0% vs 53.3%</b></div><div class="bar"><i style="width:50%;background:var(--red)"></i></div>
-<div class="row"><span>2019 · n=105</span><b>53.3% vs 54.7%</b></div><div class="bar"><i style="width:53.3%;background:var(--red)"></i></div>
-<div class="tag">В 5 последних сезонах из 7 эффект есть, в двух старых нет. Edge живой, но не 100%-но неизменный.</div></div>
-<h2>🚫 Обязательный фильтр: OT в предыдущей игре <span class="pill warn">критично</span></h2>
+<h2>🚫 Фильтр: OT в昨 предыдущей игре <span class="pill warn">критично</span></h2>
 <div class="card">
 <div class="row"><span>Гость B2B, вчера без ОТ</span><b class="gr">59.0% (n=1594)</b></div><div class="bar"><i style="width:59%;background:var(--grn)"></i></div>
 <div class="row"><span>Гость B2B, вчера ОТ</span><b class="rd">50.2% (n=235)</b></div><div class="bar"><i style="width:50.2%;background:var(--red)"></i></div>
-<div class="tag">z = −2.54: после овертайма advantage исчезает полностью. Ставки B2B после ОТ пропускаем. Верно и для свежих гостей (44.8% с ОТ vs 53.6% без, z = −4.85).</div></div>
-<h2>💰 Бэктест правила (цены рынка 2021-23)</h2><div class="card">
-<table style="width:100%;border-collapse:collapse;font-size:13.5px" border="0">
-<tr style="color:var(--mut);font-size:11px;text-transform:uppercase"><td>Окно</td><td>Ставок</td><td>Yield</td><td>WR</td><td>DD</td></tr>
-<tr><td>Val 2021/22</td><td>100</td><td class="gr">+6.8%</td><td>62.0%</td><td>6.0%</td></tr>
-<tr><td>Test 2022/23</td><td>249</td><td class="gr">+6.3%</td><td>59.4%</td><td>10.2%</td></tr>
-<tr><td><b>Pooled</b></td><td><b>349</b></td><td class="gr"><b>+6.4%</b></td><td><b>60.2%</b></td><td>10.2%</td></tr>
+<div class="tag">z = -2.54: после овертайма преимущество пропадает. B2B после ОТ не играем.</div>
+</div>
+<h2>💰 Бэктест правила по ценам рынка 2021-23</h2>
+<div class="card"><table>
+<tr style="color:var(--mut);font-size:11px;"><td>Окно</td><td>Ставок</td><td>Yield</td><td>WR</td></tr>
+<tr><td>Val 2021/22</td><td>100</td><td class="gr">+6.8%</td><td>62.0%</td></tr>
+<tr><td>Test 2022/23</td><td>249</td><td class="gr">+6.3%</td><td>59.4%</td></tr>
+<tr><td><b>Pooled</b></td><td><b>349</b></td><td class="gr"><b>+6.4%</b></td><td><b>60.2%</b></td></tr>
 </table>
-<div class="note">Выделено значение: правило даёт стабильный плюс, но t = 1.37 (p = 0.17). Это real edge, но с высокой дисперсией. Для БетБума: доли 1.5-2% банка, не более, и всегда с фильтром по ОТ.</div>
+<div class="note">t = 1.37 (p = 0.17): сигнал реальный, но с дисперсией. В БетБум: доля 1-2% банка, фильтр по OT обязателен.</div>
 </div>
-<h2>🔮 Итерация 10: против Polymarket (разведка) <span class="pill exp">exploratory</span></h2>
-<div class="card">
-<div class="row"><span>Селтл B2B-правила vs Polymarket cash</span><b class="gr">60.2% vs 56.9%</b></div><div class="bar"><i style="width:60.2%;background:var(--grn)"></i></div>
-<div class="row"><span>Yield по крауд-цене</span><b class="gr">+7.3%</b></div><div class="bar"><i style="width:7.3%;background:var(--grn)"></i></div>
-<div class="tag">n = 221, p = 0.24. Направление совпадает с бэктестом по букмекерским линиям (это и есть главная валидация эффекта на независимом рынке). Малые выборки: гипотеза возраст×B2B (старый гость 42.9% vs молодой 75.0%, z = 3.9) в watchlist.</div>
-</div>
-<div class="verdict" data-s="nhl all">✅ <b>Как играть в NHL (только это):</b> ставка на хозяина, когда гость на back-to-back, хозяин свежий, вчера у гостя был НЕ овертайм. Против вчерашнего OT в правила не берём. Доля банка: 1-2%. Остальные правила NHL в статусе наблюдения.</div>
+<div class="verdict">✅ <b>Как играть в NHL:</b> ставка на хозяина: гость на back-to-back, хозяин свежий, у гостя вчера был НЕ овертайм. Доля банка 1-2%. Остальное - наблюдение.</div>
 </section>
 <section data-s="foot all">
 <h2>⚽ Футбол: модельные сигналы <span class="pill dead">не использовать</span></h2>
 <div class="card">
-<div class="row"><span>Pooled 6 лиг (2024/25), yield модели</span><b class="rd">−15.1%</b></div><div class="bar"><i style="width:15.1%;background:var(--red)"></i></div>
-<div class="row"><span>ROI на фаворите (closing, бенчмарк)</span><b class="rd">−15.7%</b></div><div class="bar"><i style="width:15.7%;background:var(--red)"></i></div>
-<div class="row"><span>CLV (итерация 2)</span><b class="rd">−2.4%</b></div><div class="bar"><i style="width:2.4%;background:var(--red)"></i></div>
-<div class="tag">Во всех 6 лигах yield отрицательный, модель не бьёт baseline. Рынок closing odds эффективен.</div></div>
-<h2>⚡ Live-пул 2025/26 <span class="pill warn">осторожно</span></h2>
+<div class="row"><span>Pooled 6 лиг, yield модели</span><b class="rd">-15.1%</b></div><div class="bar"><i style="width:15.1%;background:var(--red)"></i></div>
+<div class="row"><span>CLV</span><b class="rd">-2.4%</b></div><div class="bar"><i style="width:2.4%;background:var(--red)"></i></div>
+<div class="tag">Во всех 6 лигах yield отрицательный, рынок closing odds эффективен.</div>
+</div>
+<h2>⚡ Live-пул 2025/26 <span class="pill warn">мониторинг</span></h2>
 <div class="card">
-<div class="row"><span>Forward-тест (итерация 4), ROI</span><b class="gr">+13.7%</b></div><div class="bar"><i style="width:13.7%;background:var(--grn)"></i></div>
-<div class="row"><span>Live 2025/26, ROI</span><b class="gr">+35.3%</b></div><div class="bar"><i style="width:35.3%;background:var(--grn)"></i></div>
-<div class="tag">В LIVE-пуле 185 сыгравших ставок, ROI большой, НО: forward t = 1.41 (незначимо), mean CLV +0.03% (нет подтверждения от рынка), выборка мала. Это не сигнал для ставок, это то, что продолжаем мониторить. Если t преодолеет 2.0 на n ≥ 400, пул станет боевым.</div></div>
-<div class="verdict" data-s="foot all">❌ <b>Футбол:</b> pre-match модельные ставки в БетБум не переносить. Верdict по всем 6 лигам стабильно отрицательный на closing-ценах. Есть толькоисследовательский live-пул и мониторинг.</div>
-</section>
-<section data-s="fat all">
-<h2>😴 Фатиг в других видах <span class="pill dead">нулевой эффект</span></h2>
-<div class="card">
-<div class="row"><span>NFL: команда после bye</span><b>ROI −9.8% (n=231, t=−1.38)</b></div>
-<div class="row"><span>NCAAB: гость B2B vs свежий</span><b>z = 0.45 (ничего)</b></div>
-<div class="row"><span>NCAAB: хозяин B2B vs свежий гость</span><b>z = −1.75 (почти)</b></div>
-<div class="row"><span>ATP: фатиг-игрок</span><b>delta +1.5pp, z = 1.10 (ничего)</b></div>
-<div class="tag">Все проверки на NFL/NCAAB/ATP не дают значимых сигналов. Hockey NHL B2B - это по-прежнему <b>единственный</b> значимый фатиг-edge во всем исследовании (z от 3.2 до 3.9 на разных выборках).</div></div>
-<div class="verdict" data-s="fat all">🚫 <b>NFL, NCAAB, ATP, теннис:</b> фатиг-ставки не монетизировать. Числа красивые только в одиночных сплитах, пре-регистрация их не подтвердила.</div>
+<div class="row"><span>ROI live-пула (185 ставок)</span><b class="gr">+35.3%</b></div><div class="bar"><i style="width:35.3%;background:var(--grn)"></i></div>
+<div class="tag">Но: t = 1.41 (незначимо), CLV +0.03%. Боевые только при t ≥ 2 на n ≥ 400.</div>
+</div>
+<div class="verdict">❌ <b>Футбол:</b> pre-match модельные ставки в БетБум не переносить. Верdict по всем 6 лигам стабильно отрицательный.</div>
 </section>
 <section data-s="wl all">
-<h2>🔍 Watchlist: что мониторим, но пока не ставим</h2>
+<h2>🔍 Watchlist: мониторим, не ставим</h2>
 <div class="card">
-<div class="row"><span>1. Возраст×B2B (старый гость слабее на B2B)</span><b class="yl">z≈3.9, n=42/60</b></div>
-<div class="row"><span>2. Гость B2B + Polymarket cash-цена</span><b class="yl">+7.3% yield, p=0.24</b></div>
-<div class="row"><span>3. Shift-TOI-нагрузка (boxscore как прокси)</span><b class="am">тест запущен</b></div>
-<div class="row"><span>4. Live-пул футбол (t-статистика)</span><b class="am">t=1.41, aim t≥2, n≥400</b></div>
-<div class="tag">Критерий перехода в позицию: t ≥ 2 на выборке ≥ 400 или готовая пре-регистрация отдельного окна. Пока всё это разведочные сигналы, не боевые правила.</div></div>
-<div class="verdict" data-s="wl all">🎯 <b>Итог для БетБум:</b> одно правило NHL (гость B2B без OT, ставка на хозяина) имеет статистическое обоснование (z = 3.34 в 10-летнем пуле, +6.4% yield в бэктесте по реальным ценам, +7.3% yield на независимом рынке Polymarket). Все остальное - либо минус, либо разведка.</div>
+<div class="row"><span>1. Возраст × B2B</span><b class="yl">z≈3.9, n=42/60</b></div>
+<div class="row"><span>2. Гость B2B vs Polymarket cash</span><b class="yl">+7.3%, p=0.24, n=221</b></div>
+<div class="row"><span>3. Shift-TOI-нагрузка (boxscore)</span><b class="am">тест запущен</b></div>
+<div class="row"><span>4. Live-пул футбол t-статистика</span><b class="am">t=1.41, цель t≥2, n≥400</b></div>
+</div>
+<div class="verdict">🎯 <b>Итог для БетБум:</b> одно правило NHL (гость B2B без OT, ставка на хозяина) имеет статистическое обоснование: z = 3.34 в 10-летнем пуле, +6.4% yield в бэктесте, +7.3% yield на независимом рынке Polymarket. Остальное - минус или разведка.</div>
 </section>
-<section data-s="today all nhl"><h2>📅 Матчи сегодня <span class="pill exp">LIVE</span></h2><div class="card" id="gwrap"><div class="tag">Загружаю календарь NHL<span class="dots"></span></div></div><div class="note">Бейджи: <b class="gr">ГОСТЬ B2B</b> - по правилу ставка на хозяина (доля 1-2% банка); <b class="yl">OT ВЧЕРА</b> - по правилу пропуск; <span class="am">СВЕЖИЕ</span> - обычная игра. Время показано в твоей локальной зоне.</div></section><footer>Данные: epl-value-betting (football-data.co.uk, NHL API, Polymarket, nflverse, tennis-data.co.uk), итерации 1-10, обновлено 22.11.2026. Статистическая значимость: z/t = тестовая статистика. Не является финансовой рекомендацией.</footer>
+</div>
+<footer>Не является финансовой рекомендацией.</footer>
 <script>
 const tabs = document.querySelectorAll(".tab");
-tabs.forEach(t => t.addEventListener("click", () => {
-  document.querySelectorAll(".tab").forEach(x => x.classList.remove("on"));
-  t.classList.add("on");
-  const sel = t.dataset.t;
-  document.querySelectorAll("section").forEach(s => {
-    s.style.display = (sel === "all" || (s.dataset.s && s.dataset.s.indexOf(sel) >= 0)) ? "" : "none";
+for (const t of tabs) {
+  t.addEventListener("click", function() {
+    for (const x of tabs) x.classList.remove("on");
+    t.classList.add("on");
+    const sel = t.getAttribute("data-t");
+    const secs = document.querySelectorAll("section");
+    for (const s of secs) {
+      const ds = s.getAttribute("data-s") || "";
+      s.style.display = (sel === "all" || ds.indexOf(sel) >= 0) ? "" : "none";
+    }
+    window.scrollTo(0, 0);
   });
-  window.scrollTo({top:0});
-}));
-const API = "https://api-web.nhle.com/v1/score/";const jc = u => fetch(u).then(r => r.json());function badge(x){ return x ? '<span style="display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;margin:2px 4px 0 0;background:' + (x==="RULE" ? "rgba(46,224,109,.18);color:#2ee06d" : x==="OT" ? "rgba(255,200,87,.16);color:#ffc857" : "rgba(77,163,255,.14);color:#4da3ff") + '">' + (x==="RULE" ? "ГОСТЬ B2B ✅ ставка на хозяина" : x==="OT" ? "OT ВЧЕРА ⚠️ пропуск" : "СВЕЖИЕ") + "</span>"; }async function loadGames(){  const wrap = document.getElementById("gwrap");  try {    const now = await jc(API + "now");    const days = [now.prevDate, now.currentDate, now.nextDate];    const all = await Promise.all(days.map(d => jc(API + d)));    const pm = {};    all.slice(0,2).forEach(j => (j.games||[]).forEach(g => {      const ot = g.periodDescriptor && g.periodDescriptor.periodType !== "REG";      if (g.homeTeam) pm[g.homeTeam.abbrev] = {d: g.gameDate || j.currentDate, ot: ot};      if (g.awayTeam) pm[g.awayTeam.abbrev] = {d: g.gameDate || j.currentDate, ot: ot};    }));    const rows = [];    all.slice(1).forEach(j => (j.games||[]).forEach(g => {      const hnm = g.homeTeam ? g.homeTeam.abbrev : "?";      const anm = g.awayTeam ? g.awayTeam.abbrev : "?";      const ph = pm[hnm], pa = pm[anm];      const dayOf = j.currentDate; const gap = x => x ? (Date.parse(dayOf) - Date.parse(x.d)) / 36e5 < 48 : false;      const bA = gap(pa), bH = gap(ph);      let tag = null;      if (bA && !pa.ot && !bH) tag = "RULE";      else if ((bA && pa.ot) || (bH && ph.ot)) tag = "OT";      const stLive = ["LIVE","CRIT"].includes(g.gameState) || (g.clock && g.clock.inIntermission);      const stTxt = g.gameState === "FUT" ? new Date(g.startTimeUTC).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}) : g.gameState === "LIVE" ? "идёт" : g.gameState === "FINAL" ? "сыгран" : g.gameState;      let score = "";      if (g.homeTeam && g.homeTeam.score !== undefined && g.gameState !== "FUT") score = g.awayTeam.score + " : " + g.homeTeam.score;      rows.push({d: dayOf, m: anm + " @ " + hnm, tag: tag, st: stTxt, sc: score, live: stLive, now: g.gameState === "LIVE"});    }));    rows.sort((a,b) => (b.tag==="RULE") - (a.tag==="RULE") || (b.now - a.now) || String(a.d).localeCompare(b.d));    let html = "";    const rules = rows.filter(r => r.tag === "RULE");    if (rules.length) html += '<div class="note" style="border-color:#2ee06d">🎯 По правилу сегодня: ' + rules.map(r => r.m).join(", ") + '. Доля банка 1-2%, ставка на хозяина.</div>';    else html += '<div class="note" style="border-color:#ffc857">Сегодня матчей под правило (гость B2B без OT у обоих исход с хозяином свежим) нет. Ставить ничего не нужно, это нормально: правило срабатывает в среднем 4-6 раз за 2 недели.</div>';    html += rows.map(r => '<div class="row"><span>' + r.m + ' <span style="color:var(--mut);font-size:12px">' + r.st + (r.sc ? " · " + r.sc : "") + '</span><br>' + (r.tag ? badge(r.tag) : badge("FRESH")) + '</span><b style="color:' + (r.tag==="RULE" ? "#2ee06d" : "var(--mut)") + '">' + (r.tag==="RULE" ? "PLAY" : "-") + '</b></div>').join("");    wrap.innerHTML = html;  } catch(e) {    wrap.innerHTML = '<div class="tag">⚠️ Не получилось загрузить календарь из браузера (нет сети или блокировка CORS). Открой эту страницу по адресу https://..../betboom.html, а не локальным файлом.</div>';  }}loadGames();setInterval(loadGames, 120000);</script>
+}
+</script>
+<script>
+const API = "https://api-web.nhle.com/v1/score/";
+function fetchJSON(url, ms) {
+  return new Promise(function(resolve, reject) {
+    const t = setTimeout(function() { reject(new Error("timeout")); }, ms || 8000);
+    fetch(url).then(function(r) { return r.json(); }).then(function(j) { clearTimeout(t); resolve(j); }).catch(function(e) { clearTimeout(t); reject(e); });
+  });
+}
+function badge(txt, cls) { return "<span class=\"badge " + cls + "\">" + txt + "</span>"; }
+async function loadGames() {
+  const gwrap = document.getElementById("gwrap");
+  const rulebox = document.getElementById("rulebox");
+  try {
+    const now = await fetchJSON(API + "now");
+    const dates = [now.prevDate, now.currentDate, now.nextDate].filter(Boolean);
+    const all = await Promise.all(dates.map(function(d) { return fetchJSON(API + d); }));
+    const lastPlay = {};
+    for (let i = 0; i < 2 && i < all.length; i++) {
+      const j = all[i];
+      const gs = j.games || [];
+      for (const g of gs) {
+        const ot = !!(g.periodDescriptor && g.periodDescriptor.periodType && g.periodDescriptor.periodType !== "REG");
+        const flag = { d: j.currentDate || dates[i], ot: ot };
+        if (g.homeTeam) lastPlay[g.homeTeam.abbrev] = flag;
+        if (g.awayTeam) lastPlay[g.awayTeam.abbrev] = flag;
+      }
+    }
+    const rows = [];
+    for (let i = 1; i < all.length; i++) {
+      const j = all[i];
+      const day = j.currentDate || dates[i];
+      for (const g of (j.games || [])) {
+        const h = g.homeTeam ? g.homeTeam.abbrev : "?";
+        const a = g.awayTeam ? g.awayTeam.abbrev : "?";
+        const ph = lastPlay[h], pa = lastPlay[a];
+        const gapHours = function(f) { return f ? (Date.parse(day) - Date.parse(f.d)) / 3.6e6 : 999; };
+        const bH = gapHours(ph) < 48, bA = gapHours(pa) < 48;
+        let tag = "FRESH";
+        if (bA && bH) tag = "BOTH";
+        else if (bA && pa.ot) tag = "OT";
+        else if (bH && ph.ot) tag = "OTH";
+        else if (bA) tag = "RULE";
+        const state = g.gameState || "?";
+        let when = new Date(g.startTimeUTC).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+        if (state === "LIVE" || state === "CRIT") when = "идёт " + (g.awayTeam.score !== undefined ? g.awayTeam.score + ":" + g.homeTeam.score : "");
+        else if (state === "FINAL") when = "сыгран " + (g.awayTeam.score !== undefined ? g.awayTeam.score + ":" + g.homeTeam.score : "");
+        rows.push({ day: day, m: a + " @ " + h, tag: tag, when: when, fut: state === "FUT" });
+      }
+    }
+    const order = { RULE: 0, OT: 1, OTH: 2, FRESH: 3, BOTH: 4 };
+    rows.sort(function(x, y) { return (order[x.tag] - order[y.tag]) || (x.fut === y.fut ? 0 : (x.fut ? -1 : 1)) || x.day.localeCompare(y.day); });
+    const badgeFor = function(tag) {
+      if (tag === "RULE") return badge("ГОСТЬ B2B - ставка на хозяина", "b-rule");
+      if (tag === "OT") return badge("B2B после OT - пропуск", "b-ot");
+      if (tag === "OTH" || tag === "BOTH") return badge("не подходит под правило", "b-ot");
+      return badge("СВЕЖИЕ - ставки нет", "b-fresh");
+    };
+    let out = "";
+    const rules = rows.filter(function(r) { return r.tag === "RULE" && r.fut; });
+    if (rules.length > 0) {
+      out += "<div class=\"note\" style=\"border-color:#2ee06d\">🎯 По правилу сегодня: " + rules.map(function(r) { return r.m; }).join(", ") + ". Доля банка 1-2%, ставка на хозяина.</div>";
+    } else {
+      out += "<div class=\"note\" style=\"border-color:#ffc857\">Матчей под правило на сегодня нет. Это нормально: правило срабатывает 4-6 раз за две недели.</div>";
+    }
+    for (const r of rows) {
+      out += "<div class=\"gcard " + (r.tag === "RULE" ? "rule" : "") + "\"><div class=\"gm\">" + r.m + "</div><div class=\"gmeta\">" + r.day + " · " + r.when + "</div>" + badgeFor(r.tag) + "</div>";
+    }
+    gwrap.innerHTML = out;
+    rulebox.innerHTML = "";
+  } catch(e) {
+    gwrap.innerHTML = "⚠️ NHL API недоступен из браузера: " + e.message;
+  }
+}
+loadGames();
+setInterval(loadGames, 120000);
+</script>
 </body></html>
