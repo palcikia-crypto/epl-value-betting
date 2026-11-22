@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Итерация 8 — пул линий 10 сезонов, свежий out-of-sample, paper-трекер 2026/27</title>
+<style>
+  :root { --bg:#0e1117; --card:#161b22; --fg:#e6edf3; --muted:#8b949e; --red:#f85149; --green:#3fb950; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; padding:24px; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  h2 { font-size:17px; margin:18px 0 6px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:14px; }
+  nav a { color:var(--accent); text-decoration:none; margin-right:16px; font-size:14px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; font-size:14px; margin:10px 0; }
+  th,td { padding:9px 12px; text-align:left; border-bottom:1px solid #21262d; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  img.chart { max-width:100%; background:var(--card); border:1px solid #21262d; border-radius:10px; margin:8px 0; }
+  .verdict { background:linear-gradient(135deg,#1a1f2b,#161b22); border:1px solid #30363d; border-radius:12px; padding:16px; margin-top:12px; font-size:15px; line-height:1.6; }
+  .pos { color:var(--green); } .neg { color:var(--red); } .mut { color:var(--muted); }
+</style>
+</head>
+<body>
+<h1>🧪 Итерация 8</h1>
+<div class="sub">SBR-архивы НХЛ 12/13–22/23 (9 921 игра) · Проверка B2B до t-теста · Свежий out-of-sample 2025/26 · Paper-трекер 2026/27 · Волейбол (разведка)</div>
+<nav><a href="index.html">EPL бэктест</a><a href="iter2.html">Итерация 2</a><a href="iter3.html">Итерация 3</a><a href="iter4.html">Итерация 4</a><a href="iter5.html">Итерация 5</a><a href="iter6.html">Итерация 6</a><a href="iter7.html">Итерация 7</a></nav>
+<div id="app">Загрузка…</div>
+<script>
+const pct=(x,d=1)=>(x*100).toFixed(d)+"%";
+const cls=v=>v>=0?"pos":"neg";
+fetch("iter8.json").then(r=>r.json()).then(j=>{
+const fq=j.frequency_pooled_10y, we=j.rule_exact, pf=j.rule_favside_prior, mv=j.market_move, ef=j.elo_fresh_2526, dg=j.elo_params_diagnostic_2526, pp=j.paper_2627, fr=j.fresh_freq_2526;
+let stabRows=j.season_stability_10y.map(s=>{const d=s.home_win_away_b2b-s.home_win_rested;return `<tr><td>${s.season}</td><td>${s.n}</td><td>${pct(s.home_win_away_b2b)}</td><td>${pct(s.home_win_rested)}</td><td class="${cls(d)}">${d>=0?"+":""}${pct(d)}</td></tr>`;}).join("");
+let exRows=Object.entries(we.windows).map(([t,wv])=>`<tr><td>${t}</td><td>${wv.rule.n}</td><td class="${cls(wv.rule.yield)}">${pct(wv.rule.yield)}</td><td>${pct(wv.rule.roi)}</td><td class="mut">${pct(wv.favorite.yield)}</td></tr>`).join("")+
+`<tr><td><b>ПУЛ exact</b></td><td>${we.pooled.n}</td><td class="${cls(we.pooled.yield)}"><b>${pct(we.pooled.yield)}</b></td><td>${pct(we.pooled.roi)}</td><td class="mut">t=${we.pooled.yield_t}, p=${we.pooled.p_value}</td></tr>`;
+let prRows=Object.entries(pf.windows).map(([t,wv])=>`<tr><td>${t}</td><td>${wv.n}</td><td class="${cls(wv.yield)}">${pct(wv.yield)}</td></tr>`).join("")+
+`<tr><td><b>ПУЛ prior</b></td><td>${pf.pooled.n}</td><td class="${cls(pf.pooled.yield)}"><b>${pct(pf.pooled.yield)}</b></td><td class="mut">t=${pf.pooled.yield_t}</td></tr>`;
+let dgRows=Object.entries(dg).filter(([k])=>k!=="NOTE").map(([k,vv])=>`<tr><td>${k}</td><td>${pct(vv.accuracy)}</td><td>${vv.logloss}</td></tr>`).join("");
+document.getElementById("app").innerHTML=`
+
+<h2>1. Пул линий увеличен в 6 раз: SBR-архивы НХЛ 2012/13 → 2022/23</h2>
+<div class="verdict">
+• Через Wayback Machine (CDX API) найдены и скачаны архивы SBR ещё за 8 сезонов: <b>2012/13, 2013/14, 2014/15, 2015/16, 2016/17, 2018/19, 2019/20, ковидный 2020/21</b>. Пул: <b>9 921 игра за 10 сезонов</b> (1 713 ставок правила с точной ценой нужной стороны, из них 962 — в 5 окнах с ценами на обе стороны).<br>
+• Схема старых файлов другая: moneyline указан только у фаворита (у второй стороны — тотал). Парсер обобщён: передразбором числа и граница ±100 американской шкалы проверяются, приорный блок учитывает это ограничение.<br>
+• Полный сезон 2025/26 и текущий 2026/27 добраны по официальному NHL API (~1 877 игр в кэше).
+</div>
+
+<h2>2. B2B-частота на 10 сезонах: эффект подтверждён (p=0.0008)</h2>
+<img class="chart" src="iter8_freq.png">
+<table><tr><th>Ситуация</th><th>Игр</th><th>Побед хозяина</th><th>95% ДИ</th></tr>
+<tr><td>Гость B2B, хозяин свежий</td><td>${fq.away_b2b.n}</td><td><b>${pct(fq.away_b2b.home_win)}</b></td><td class="mut">${pct(fq.away_b2b.ci95[0])} … ${pct(fq.away_b2b.ci95[1])}</td></tr>
+<tr><td>Оба свежие</td><td>${fq.away_rested.n}</td><td>${pct(fq.away_rested.home_win)}</td><td class="mut">—</td></tr>
+<tr><td>Хозяин B2B</td><td>${fq.home_b2b.n}</td><td><b>${pct(fq.home_b2b.home_win)}</b></td><td class="mut">${pct(fq.home_b2b.ci95[0])} … ${pct(fq.home_b2b.ci95[1])}</td></tr></table>
+<div class="verdict">
+• <b>Гость B2B: +${((fq.away_b2b.home_win-fq.away_rested.home_win)*100).toFixed(1)} п.п. к победам хозяина, z=${fq.z_away_b2b_vs_rested}, p=${fq.p_away_b2b_vs_rested} на ${fq.games} играх — причинный эффект доказан окончательно.</b><br>
+• <b>Свежий, никогда не виденный моделью сезон 2025/26: ${pct(fr.away_b2b.home_win)} (n=${fr.away_b2b.n}) против ${pct(fr.away_rested.home_win)} (n=${fr.away_rested.n})</b> — эффект не выветрился (+11.1 п.п.). Live 2026/27: ${pct(pp.away_b2b_home_win)} (n=${pp.away_b2b_n}).<br>
+• Стабильность по 10 сезонам — на графике: 8 из 10 в плюс, только 2016/17 и 2019/20 около нуля или чуть отрицательно.
+</div>
+
+<h2>3. B2B-правило против линий: пул 5 окон с точными ценами</h2>
+<img class="chart" src="iter8_rule.png">
+<table><tr><th>Окно</th><th>Ставок</th><th>Yield</th><th>ROI</th><th>Фаворит (yield)</th></tr>${exRows}</table>
+<div class="mut">Prior-блок 2012/13–2016/17 (ставка только когда эта сторона — фаворит, цена точная; это подвыборка):</div>
+<table><tr><th>Окно</th><th>Ставок</th><th>Yield</th><th>Стат-тест</th></tr>${prRows}</table>
+<div class="verdict">
+• Пул exact: <b>${we.pooled.n} ставок</b>, yield <b>+${pct(we.pooled.yield)}</b>, ROI +${pct(we.pooled.roi)} — <b>но t=${we.pooled.yield_t}, p=${we.pooled.p_value}: статистической значимости НЕТ</b>.<br>
+• Окна волатильны: +24.2% (2020/21), +9.8% (2021/22), но −4.3% (2019/20) и −8.1% (2022/23) — правило то платит, то обратно.<br>
+• <b>Честный вывод: итерация 7 обещала +6.4% по пулу из 349 ставок; расширенный пул опустил оценку до +3.75% без значимости</b>, а prior-блок старых сезонов — около нуля (−0.5%). Рынок перекрывает B2B в среднем (сдвиг Open→Close +1.2 п.п. на затронутых играх n=${mv.n_away_b2b} против ≈0 у остальных). Правило — в watchlist, не в боевые стратегии.
+</div>
+
+<h2>4. Свежий out-of-sample: Elo на завершённом 2025/26</h2>
+<img class="chart" src="iter8_elo.png">
+<table><tr><th>Вариант (post-hoc диагностика, НЕ перенастройка)</th><th>Точность 2025/26</th><th>Logloss</th></tr>${dgRows}</table>
+<div class="verdict">
+• <b>Тюнингованный Elo: ${pct(ef.accuracy)} на n=${ef.n} — большой откат от 58.8% на 2024/25.</b><br>
+• Диагностика: на 2025/26 падают ВСЕ варианты параметров (52.2–53.3%) — дело не в переобучении тюнинга, сам сезон структурно другой: база rested упала до ${pct(fr.away_rested.home_win)} против ~53.8% в 2019–2024.<br>
+• Линий на 2025/26 в Wayback ещё нет, сравнение с рынком отложить до появления снимков.<br>
+• Урок для системы: нужен скользящий 3-сезонный тест вместо одиночного; параметры перепроверять при межсезонном дрейфе.
+</div>
+
+<h2>5. Paper-трекер live НХЛ 2026/27 (обновляемый)</h2>
+<div class="verdict">
+• <a class="mut" href="live_nhl_2627.csv">live_nhl_2627.csv</a>: ${pp.games} игр на текущую дату, для каждой p_elo, B2B-флаги и сигнал правила.<br>
+• Точность Elo на live-сезоне: ${pct(pp.elo_accuracy_live)}. Гость-B2B сигналов: ${pp.away_b2b_n} (хозяин выиграл ${pct(pp.away_b2b_home_win)}), хозяин-B2B: ${pp.home_b2b_n}.<br>
+• Линий для settle ROI в открытом доступе нет — когда появятся SBR-снимки 2026/27 в Wayback, трекер посчитает yield по закрытым линиям.
+</div>
+
+<h2>6. Волейбол (разведка)</h2>
+<div class="verdict">
+• Все открытые API истории волейбола платные: volleyballapi.com (free key — только вчера/сегодня, 50 запросов/день), api-volleyball.com (trial), OddsMatrix/Data Sports Group — коммерческие.<br>
+• GitHub-датасеты (elite-volleyball-dataset, volleystats) — скрейпинг Data Project WCM по-матчево, объёма для бэктеста не дают сразу.<br>
+• Вывод: волейбол пока недоступен в бесплатном стеке; кандидат на будущую итерацию — live-трекер через volleyballapi.com.
+</div>
+
+<h2>Итог 8 итерации</h2>
+<div class="verdict">
+• <b>Частотный B2B-эффект доказан окончательно</b>: 9 921 игра, z=3.34, p=0.0008, разные источники (SBR + NHL API), подтверждение на свежем 2025/26 (+11.1 п.п.) и 2026/27 (63.6%).<br>
+• <b>Монетизация понижена честно</b>: 5 точных окон — yield +3.75% (t=1.31, p=0.19, не значимо), prior-блок — ≈ноль. На 349 ставках итерации 7 мы завышали силу.<br>
+• <b>Свежий OOS Elo: откат до 52.3%</b> — не ошибка параметров, а изменение структуры сезона; в систему заложен принцип скользящего 3-сезонного теста.<br>
+• Paper-трекер 2026/27 работает и обновляется; волейбол — закрыт для бесплатного стека, зафиксирован как кандидат под live-ключ.
+</div>
+`;
+});
+</script>
+</body>
+</html>

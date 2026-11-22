@@ -1,0 +1,317 @@
+{
+ "frequency_pooled_10y": {
+  "games": 9921,
+  "away_b2b": {
+   "n": 1521,
+   "home_win": 0.5884,
+   "ci95": [
+    0.5635,
+    0.6129
+   ]
+  },
+  "away_rested": {
+   "n": 7398,
+   "home_win": 0.5416
+  },
+  "home_b2b": {
+   "n": 498,
+   "home_win": 0.4779,
+   "ci95": [
+    0.4344,
+    0.5218
+   ]
+  },
+  "z_away_b2b_vs_rested": 3.341,
+  "p_away_b2b_vs_rested": 0.000835,
+  "z_rested_vs_home_b2b": 2.761
+ },
+ "season_stability_10y": [
+  {
+   "season": "2012-13",
+   "n": 105,
+   "home_win_away_b2b": 0.6667,
+   "home_win_rested": 0.5641
+  },
+  {
+   "season": "2013-14",
+   "n": 210,
+   "home_win_away_b2b": 0.5667,
+   "home_win_rested": 0.5351
+  },
+  {
+   "season": "2014-15",
+   "n": 195,
+   "home_win_away_b2b": 0.6,
+   "home_win_rested": 0.5369
+  },
+  {
+   "season": "2015-16",
+   "n": 215,
+   "home_win_away_b2b": 0.5721,
+   "home_win_rested": 0.5247
+  },
+  {
+   "season": "2016-17",
+   "n": 70,
+   "home_win_away_b2b": 0.5857,
+   "home_win_rested": 0.6488
+  },
+  {
+   "season": "2018-19",
+   "n": 213,
+   "home_win_away_b2b": 0.615,
+   "home_win_rested": 0.5254
+  },
+  {
+   "season": "2019-20",
+   "n": 194,
+   "home_win_away_b2b": 0.5206,
+   "home_win_rested": 0.541
+  },
+  {
+   "season": "2020-21",
+   "n": 37,
+   "home_win_away_b2b": 0.5946,
+   "home_win_rested": 0.5259
+  },
+  {
+   "season": "2021-22",
+   "n": 230,
+   "home_win_away_b2b": 0.6174,
+   "home_win_rested": 0.531
+  },
+  {
+   "season": "2022-23",
+   "n": 52,
+   "home_win_away_b2b": 0.5577,
+   "home_win_rested": 0.5128
+  }
+ ],
+ "rule_exact": {
+  "windows": {
+   "2018-19": {
+    "rule": {
+     "n": 278,
+     "roi": 0.0284,
+     "yield": 0.0101,
+     "wr": 0.5827,
+     "dd": 0.1923,
+     "yield_t": 0.262,
+     "p_value": 0.7931
+    },
+    "favorite": {
+     "n": 1358,
+     "roi": -0.4753,
+     "yield": -0.0469,
+     "wr": 0.5751,
+     "dd": 0.502
+    }
+   },
+   "2019-20": {
+    "rule": {
+     "n": 236,
+     "roi": -0.0982,
+     "yield": -0.0432,
+     "wr": 0.5339,
+     "dd": 0.2497,
+     "yield_t": -0.638,
+     "p_value": 0.5234
+    },
+    "favorite": {
+     "n": 1081,
+     "roi": -0.4961,
+     "yield": -0.0609,
+     "wr": 0.5606,
+     "dd": 0.5507
+    }
+   },
+   "2020-21": {
+    "rule": {
+     "n": 65,
+     "roi": 0.1688,
+     "yield": 0.2424,
+     "wr": 0.6308,
+     "dd": 0.0341,
+     "yield_t": 1.906,
+     "p_value": 0.0567
+    },
+    "favorite": {
+     "n": 950,
+     "roi": 0.0316,
+     "yield": 0.0028,
+     "wr": 0.6147,
+     "dd": 0.2564
+    }
+   },
+   "2021-22": {
+    "rule": {
+     "n": 320,
+     "roi": 0.3614,
+     "yield": 0.0983,
+     "wr": 0.6188,
+     "dd": 0.1197,
+     "yield_t": 1.918,
+     "p_value": 0.0552
+    },
+    "favorite": {
+     "n": 1401,
+     "roi": 0.786,
+     "yield": 0.0421,
+     "wr": 0.6495,
+     "dd": 0.1743
+    }
+   },
+   "2022-23": {
+    "rule": {
+     "n": 63,
+     "roi": -0.0503,
+     "yield": -0.0805,
+     "wr": 0.5238,
+     "dd": 0.1074,
+     "yield_t": -0.664,
+     "p_value": 0.5069
+    },
+    "favorite": {
+     "n": 339,
+     "roi": -0.1725,
+     "yield": -0.0564,
+     "wr": 0.5841,
+     "dd": 0.2571
+    }
+   }
+  },
+  "pooled": {
+   "n": 962,
+   "roi": 0.4015,
+   "yield": 0.0375,
+   "wr": 0.5821,
+   "dd": 0.2497,
+   "yield_t": 1.307,
+   "p_value": 0.1912
+  }
+ },
+ "rule_favside_prior": {
+  "windows": {
+   "2012-13": {
+    "n": 106,
+    "roi": 0.0557,
+    "yield": 0.0498,
+    "wr": 0.6509,
+    "dd": 0.0771,
+    "yield_t": 0.712,
+    "p_value": 0.4766
+   },
+   "2013-14": {
+    "n": 182,
+    "roi": -0.0377,
+    "yield": -0.0214,
+    "wr": 0.6154,
+    "dd": 0.099,
+    "yield_t": -0.308,
+    "p_value": 0.7579
+   },
+   "2014-15": {
+    "n": 195,
+    "roi": -0.0629,
+    "yield": -0.0318,
+    "wr": 0.6205,
+    "dd": 0.1398,
+    "yield_t": -0.549,
+    "p_value": 0.583
+   },
+   "2015-16": {
+    "n": 198,
+    "roi": 0.0465,
+    "yield": 0.0229,
+    "wr": 0.6414,
+    "dd": 0.0997,
+    "yield_t": 0.47,
+    "p_value": 0.6382
+   },
+   "2016-17": {
+    "n": 70,
+    "roi": -0.0356,
+    "yield": -0.0519,
+    "wr": 0.5857,
+    "dd": 0.0906,
+    "yield_t": -0.5,
+    "p_value": 0.6172
+   }
+  },
+  "pooled": {
+   "n": 751,
+   "roi": -0.0392,
+   "yield": -0.0052,
+   "wr": 0.6258,
+   "dd": 0.1955,
+   "yield_t": -0.079,
+   "p_value": 0.9367
+  }
+ },
+ "rule_all10_favside": {
+  "n": 1713,
+  "roi": 0.3466,
+  "yield": 0.0194,
+  "wr": 0.6013,
+  "dd": 0.2797,
+  "yield_t": 1.005,
+  "p_value": 0.3149
+ },
+ "market_move": {
+  "p_home_shift_away_b2b": 0.0122,
+  "p_home_shift_rest": -0.0004,
+  "n_away_b2b": 726
+ },
+ "elo_fresh_2526": {
+  "params": {
+   "k": 30.0,
+   "home_adv": 40.0,
+   "mov": 0.3,
+   "rtm": 0.2
+  },
+  "n": 1312,
+  "accuracy": 0.5229,
+  "logloss": 0.6947,
+  "brier": 0.2506
+ },
+ "elo_params_diagnostic_2526": {
+  "NOTE": "post-hoc диагностик, не новая настройка",
+  "plain_K20_ha100": {
+   "accuracy": 0.5122,
+   "logloss": 0.7275,
+   "brier": 0.2652,
+   "n": 1312
+  },
+  "k20_ha40_rtm02": {
+   "accuracy": 0.5274,
+   "logloss": 0.693,
+   "brier": 0.2499,
+   "n": 1312
+  },
+  "k30_ha40_rtm02_nomov": {
+   "accuracy": 0.5328,
+   "logloss": 0.6935,
+   "brier": 0.2501,
+   "n": 1312
+  }
+ },
+ "fresh_freq_2526": {
+  "away_b2b": {
+   "n": 197,
+   "home_win": 0.6091
+  },
+  "away_rested": {
+   "n": 954,
+   "home_win": 0.4979
+  }
+ },
+ "paper_2627": {
+  "games": 352,
+  "elo_accuracy": 0.5229,
+  "elo_accuracy_live": 0.5142,
+  "away_b2b_n": 55,
+  "away_b2b_home_win": 0.6364,
+  "home_b2b_n": 9,
+  "home_b2b_away_win": 0.5556
+ }
+}
