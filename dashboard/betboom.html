@@ -7,7 +7,7 @@
 <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="description" content="EDGE Dashboard: сигналы NHL B2B и матчи на сегодня">
-<title>EDGE Dashboard (v5)</title>
+<title>EDGE Dashboard (v6)</title>
 <style>
 :root{--bg:#0b0e14;--card:#151b26;--card2:#1a2230;--line:#232c3d;--fg:#e8eef7;--mut:#8fa0b5;--grn:#2ee06d;--red:#ff5c5c;--yel:#ffc857;--acc:#4da3ff;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -53,7 +53,7 @@ footer{color:var(--mut);font-size:11.5px;padding:16px;line-height:1.6;}
 </style>
 </head>
 <body>
-<header><h1>🎯 EDGE <span>DASHBOARD</span> (v5)</h1>
+<header><h1>🎯 EDGE <span>DASHBOARD</span> (v6)</h1>
 <div class="sub">● Сигналы NHL B2B · epl-value-betting · 22.11.2026</div></header>
 <div class="tabbar"><div class="tabs">
 <button class="tab on" data-t="all">Всё</button>
@@ -147,72 +147,81 @@ const API = "https://api-web.nhle.com/v1/score/";
 function fetchJSON(url, ms) {
   return new Promise(function(resolve, reject) {
     const t = setTimeout(function() { reject(new Error("timeout")); }, ms || 8000);
-    fetch(url).then(function(r) { return r.json(); }).then(function(j) { clearTimeout(t); resolve(j); }).catch(function(e) { clearTimeout(t); reject(e); });
+    fetch(url).then(function(r) { return r.json(); }).then(function(j) { clearTimeout(t); resolve(j); }, function(e) { clearTimeout(t); reject(e); });
   });
 }
-function badge(txt, cls) { return "<span class=\"badge " + cls + "\">" + txt + "</span>"; }
-async function loadGames() {
+function renderRows(rows, updated, scoreFetched) {
   const gwrap = document.getElementById("gwrap");
   const rulebox = document.getElementById("rulebox");
+  let out = "";
+  const rules = rows.filter(function(r) { return r.tag === "RULE" && r.state === "FUT"; });
+  if (rules.length > 0) {
+    out = out + "<div class=\"note\" style=\"border-color:#2ee06d\">🎯 По правилу сегодня: " + rules.map(function(r) { return r.m; }).join(", ") + ". Доля банка 1-2%, ставка на хозяина.</div>";
+  } else {
+    out = out + "<div class=\"note\" style=\"border-color:#ffc857\">Матчей под правило на сегодня нет. Это нормально: правило срабатывает 4-6 раз за две недели.</div>";
+  }
+  for (const r of rows) {
+    let when;
+    if (r.state === "LIVE" || r.state === "CRIT") when = "идёт " + (r.score || "");
+    else if (r.state === "FINAL") when = "сыгран " + (r.score || "");
+    else when = new Date(r.start).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+    let badgeTxt, badgeCls;
+    if (r.tag === "RULE") { badgeTxt = "ГОСТЬ B2B - ставка на хозяина"; badgeCls = "b-rule"; }
+    else if (r.tag === "OT") { badgeTxt = "B2B после OT - пропуск"; badgeCls = "b-ot"; }
+    else if (r.tag === "OTH" || r.tag === "BOTH") { badgeTxt = "не подходит под правило"; badgeCls = "b-ot"; }
+    else { badgeTxt = "СВЕЖИЕ - ставки нет"; badgeCls = "b-fresh"; }
+    const ruleCard = r.tag === "RULE" ? " rule" : "";
+    out = out + "<div class=\"gcard" + ruleCard + "\"><div class=\"gm\">" + r.m + "</div><div class=\"gmeta\">" + r.day + " · " + when + " · " + r.state + "</div><span class=\"badge " + badgeCls + "\">" + badgeTxt + "</span></div>";
+  }
+  gwrap.innerHTML = out;
+  rulebox.innerHTML = "";
+}
+function rowsFromDirect(all, dates) {
+  const lastPlay = {};
+  for (let i = 0; i < 2 && i < all.length; i++) {
+    const j = all[i];
+    for (const g of (j.games || [])) {
+      const ot = !!(g.periodDescriptor && g.periodDescriptor.periodType && g.periodDescriptor.periodType !== "REG");
+      const flag = { d: j.currentDate || dates[i], ot: ot };
+      if (g.homeTeam) lastPlay[g.homeTeam.abbrev] = flag;
+      if (g.awayTeam) lastPlay[g.awayTeam.abbrev] = flag;
+    }
+  }
+  const rows = [];
+  for (let i = 1; i < all.length; i++) {
+    const j = all[i];
+    const day = j.currentDate || dates[i];
+    for (const g of (j.games || [])) {
+      const h = g.homeTeam ? g.homeTeam.abbrev : "?";
+      const a = g.awayTeam ? g.awayTeam.abbrev : "?";
+      const ph = lastPlay[h], pa = lastPlay[a];
+      const gap = function(f) { return f ? (Date.parse(day) - Date.parse(f.d)) / 3.6e6 : 999; };
+      const bH = gap(ph) < 48, bA = gap(pa) < 48;
+      let tag = "FRESH";
+      if (bA && bH) tag = "BOTH";
+      else if (bA && pa.ot) tag = "OT";
+      else if (bH && ph.ot) tag = "OTH";
+      else if (bA) tag = "RULE";
+      let score = "";
+      if (g.homeTeam && g.homeTeam.score !== undefined && g.gameState !== "FUT") score = g.awayTeam.score + ":" + g.homeTeam.score;
+      rows.push({ day: day, m: a + " @ " + h, tag: tag, state: g.gameState || "?", start: g.startTimeUTC, score: score });
+    }
+  }
+  return rows;
+}
+async function loadGames() {
+  const gwrap = document.getElementById("gwrap");
+  try {
+    const j = await fetchJSON("today.json?cb=" + Date.now(), 6000);
+    if (j && Array.isArray(j.rows)) { renderRows(j.rows, j.updated); return; }
+  } catch (e1) {}
   try {
     const now = await fetchJSON(API + "now");
     const dates = [now.prevDate, now.currentDate, now.nextDate].filter(Boolean);
     const all = await Promise.all(dates.map(function(d) { return fetchJSON(API + d); }));
-    const lastPlay = {};
-    for (let i = 0; i < 2 && i < all.length; i++) {
-      const j = all[i];
-      const gs = j.games || [];
-      for (const g of gs) {
-        const ot = !!(g.periodDescriptor && g.periodDescriptor.periodType && g.periodDescriptor.periodType !== "REG");
-        const flag = { d: j.currentDate || dates[i], ot: ot };
-        if (g.homeTeam) lastPlay[g.homeTeam.abbrev] = flag;
-        if (g.awayTeam) lastPlay[g.awayTeam.abbrev] = flag;
-      }
-    }
-    const rows = [];
-    for (let i = 1; i < all.length; i++) {
-      const j = all[i];
-      const day = j.currentDate || dates[i];
-      for (const g of (j.games || [])) {
-        const h = g.homeTeam ? g.homeTeam.abbrev : "?";
-        const a = g.awayTeam ? g.awayTeam.abbrev : "?";
-        const ph = lastPlay[h], pa = lastPlay[a];
-        const gapHours = function(f) { return f ? (Date.parse(day) - Date.parse(f.d)) / 3.6e6 : 999; };
-        const bH = gapHours(ph) < 48, bA = gapHours(pa) < 48;
-        let tag = "FRESH";
-        if (bA && bH) tag = "BOTH";
-        else if (bA && pa.ot) tag = "OT";
-        else if (bH && ph.ot) tag = "OTH";
-        else if (bA) tag = "RULE";
-        const state = g.gameState || "?";
-        let when = new Date(g.startTimeUTC).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-        if (state === "LIVE" || state === "CRIT") when = "идёт " + (g.awayTeam.score !== undefined ? g.awayTeam.score + ":" + g.homeTeam.score : "");
-        else if (state === "FINAL") when = "сыгран " + (g.awayTeam.score !== undefined ? g.awayTeam.score + ":" + g.homeTeam.score : "");
-        rows.push({ day: day, m: a + " @ " + h, tag: tag, when: when, fut: state === "FUT" });
-      }
-    }
-    const order = { RULE: 0, OT: 1, OTH: 2, FRESH: 3, BOTH: 4 };
-    rows.sort(function(x, y) { return (order[x.tag] - order[y.tag]) || (x.fut === y.fut ? 0 : (x.fut ? -1 : 1)) || x.day.localeCompare(y.day); });
-    const badgeFor = function(tag) {
-      if (tag === "RULE") return badge("ГОСТЬ B2B - ставка на хозяина", "b-rule");
-      if (tag === "OT") return badge("B2B после OT - пропуск", "b-ot");
-      if (tag === "OTH" || tag === "BOTH") return badge("не подходит под правило", "b-ot");
-      return badge("СВЕЖИЕ - ставки нет", "b-fresh");
-    };
-    let out = "";
-    const rules = rows.filter(function(r) { return r.tag === "RULE" && r.fut; });
-    if (rules.length > 0) {
-      out += "<div class=\"note\" style=\"border-color:#2ee06d\">🎯 По правилу сегодня: " + rules.map(function(r) { return r.m; }).join(", ") + ". Доля банка 1-2%, ставка на хозяина.</div>";
-    } else {
-      out += "<div class=\"note\" style=\"border-color:#ffc857\">Матчей под правило на сегодня нет. Это нормально: правило срабатывает 4-6 раз за две недели.</div>";
-    }
-    for (const r of rows) {
-      out += "<div class=\"gcard " + (r.tag === "RULE" ? "rule" : "") + "\"><div class=\"gm\">" + r.m + "</div><div class=\"gmeta\">" + r.day + " · " + r.when + "</div>" + badgeFor(r.tag) + "</div>";
-    }
-    gwrap.innerHTML = out;
-    rulebox.innerHTML = "";
-  } catch(e) {
-    gwrap.innerHTML = "⚠️ NHL API недоступен из браузера: " + e.message;
+    renderRows(rowsFromDirect(all, dates));
+  } catch (e2) {
+    gwrap.innerHTML = "⚠️ Не удалось загрузить расписание: " + e2.message + ". Обнови страницу через пару минут, данные собираются автоматически.";
   }
 }
 loadGames();
