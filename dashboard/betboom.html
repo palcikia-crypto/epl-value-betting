@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="description" content="EDGE Dashboard: все сигналы из итераций 1-10 value betting пайплайна">
+<title>EDGE Dashboard - BetBoom Edition</title>
+<style>
+:root{--bg:#0b0e14;--card:#151b26;--card2:#1a2230;--line:#232c3d;--fg:#e8eef7;--mut:#8fa0b5;--grn:#2ee06d;--red:#ff5c5c;--yel:#ffc857;--acc:#4da3ff;--pink:#ff4d9d;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding-bottom:80px;max-width:720px;margin:0 auto;}
+header{padding:20px 16px 10px;position:sticky;top:0;background:linear-gradient(180deg,var(--bg) 75%,transparent);z-index:9;}
+h1{font-size:22px;letter-spacing:.02em}
+h1 span{color:var(--acc)}
+.sub{color:var(--mut);font-size:12.5px;margin-top:4px}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:9px 15px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--mut);font-size:13.5px;font-weight:600;cursor:pointer}
+.tab.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.wrap{padding:0 14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:8px 0 4px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px}
+.kpi .l{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.kpi .v{font-size:22px;font-weight:800;margin-top:5px;font-variant-numeric:tabular-nums}
+.kpi .n{font-size:11.5px;color:var(--mut);margin-top:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin:12px 0}
+h2{font-size:16px;margin:16px 2px 2px;display:flex;align-items:center;gap:8px}
+.pill{font-size:10.5px;padding:3px 9px;border-radius:999px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.pill.sig{background:rgba(46,224,109,.14);color:var(--grn)}
+.pill.warn{background:rgba(255,200,87,.14);color:var(--yel)}
+.pill.dead{background:rgba(255,92,92,.14);color:var(--red)}
+.pill.exp{background:rgba(77,163,255,.14);color:var(--acc)}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;font-size:14px}
+.row+.row{border-top:1px solid var(--line)}
+.row b{font-variant-numeric:tabular-nums}
+.bar{height:7px;border-radius:99px;background:var(--line);overflow:hidden;margin:4px 0 10px}
+.bar>i{display:block;height:100%;border-radius:99px}
+.tag{font-size:11.5px;color:var(--mut);line-height:1.5}
+.note{border-left:3px solid var(--acc);padding:8px 12px;background:var(--card2);border-radius:8px;font-size:13.5px;line-height:1.55;margin-top:10px}
+.verdict{background:linear-gradient(135deg,#142033,#151b26);border:1px solid #2b3b57;border-radius:14px;padding:16px;font-size:14.5px;line-height:1.6}
+.gr{color:var(--grn)} .rd{color:var(--red)} .yl{color:var(--yel)} .am{color:var(--acc)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.grid2{grid-template-columns:1fr}}
+footer{color:var(--mut);font-size:11.5px;padding:22px 16px;line-height:1.6}
+.pill-live{display:inline-block;width:7px;height:7px;border-radius:999px;background:var(--grn);margin-right:6px;box-shadow:0 0 6px var(--grn)}
+</style>
+</head>
+<body>
+<header><h1>🎯 EDGE <span>DASHBOARD</span></h1>
+<div class="sub"><span class="pill-live"></span>Сигналы из итераций 1-10 · epl-value-betting · обновлено 22.11.2026</div></header>
+<div class="tabs" role="tablist">
+<button class="tab on" data-t="all">Всё</button>
+<button class="tab" data-t="nhl">🏒 Хоккей B2B</button>
+<button class="tab" data-t="foot">⚽ Футбол</button>
+<button class="tab" data-t="fat">😴 Усталость</button>
+<button class="tab" data-t="wl">🔍 Watchlist</button>
+</div>
+<div class="wrap">
+<section data-s="all nhl foot fat wl"><div class="kpis">
+<div class="kpi"><div class="l">Топ-сигнал (NHL B2B)</div><div class="v gr">z = 3.34</div><div class="n">10 сезонов, 9 921 игра, p = 0.0008</div></div>
+<div class="kpi"><div class="l">Правило B2B (бэктест)</div><div class="v am">+6.4%</div><div class="n">yield, n = 349, t = 1.37</div></div>
+<div class="kpi"><div class="l">Футбол (модели)</div><div class="v rd">−15.1%</div><div class="n">pooled yield, 6 лиг</div></div>
+<div class="kpi"><div class="l">Golden rule</div><div class="v" style="font-size:15px;line-height:1.35">Гость на B2B<br>и не после OT</div><div class="n">единственное терпимое правило</div></div>
+</div></section>
+<section data-s="nhl all">
+<h2>🏒 Гость на back-to-back: рынок недооценивает <span class="pill sig">значимо</span></h2>
+<div class="card">
+<div class="row"><span>Домашние победы, гость на B2B</span><b class="gr">58.8%</b></div><div class="bar"><i style="width:58.8%;background:var(--grn)"></i></div>
+<div class="row"><span>Домашние победы, гость свежий (база)</span><b class="am">54.2%</b></div><div class="bar"><i style="width:54.2%;background:var(--acc)"></i></div>
+<div class="row"><span>Дом хозяин на B2B (для фейда)</span><b class="rd">47.8%</b></div><div class="bar"><i style="width:47.8%;background:var(--red)"></i></div>
+<div class="tag">Пул 10 сезонов NHL (9921 игра): n = 1521 vs 7398, z = 3.34, p = 0.0008. Свежий сезон 2025/26: 60.9% (n = 197) vs 49.8% (n = 954). Эффект старый и воспроизводится каждый сезон.</div>
+</div>
+<h2>📅 Стабильность по сезонам</h2><div class="card">
+<div class="row"><span>2024 · n=217</span><b>62.7% vs 52.4%</b></div><div class="bar"><i style="width:62.7%;background:var(--grn)"></i></div>
+<div class="row"><span>2023 · n=197</span><b>58.9% vs 52.4%</b></div><div class="bar"><i style="width:58.9%;background:var(--grn)"></i></div>
+<div class="row"><span>2022 · n=239</span><b>59.8% vs 51.4%</b></div><div class="bar"><i style="width:59.8%;background:var(--grn)"></i></div>
+<div class="row"><span>2021 · n=121</span><b>62.0% vs 53.0%</b></div><div class="bar"><i style="width:62%;background:var(--grn)"></i></div>
+<div class="row"><span>2025 · n=134</span><b>59.7% vs 57.2%</b></div><div class="bar"><i style="width:59.7%;background:var(--yel)"></i></div>
+<div class="row"><span>2020 · n=90</span><b>50.0% vs 53.3%</b></div><div class="bar"><i style="width:50%;background:var(--red)"></i></div>
+<div class="row"><span>2019 · n=105</span><b>53.3% vs 54.7%</b></div><div class="bar"><i style="width:53.3%;background:var(--red)"></i></div>
+<div class="tag">В 5 последних сезонах из 7 эффект есть, в двух старых нет. Edge живой, но не 100%-но неизменный.</div></div>
+<h2>🚫 Обязательный фильтр: OT в предыдущей игре <span class="pill warn">критично</span></h2>
+<div class="card">
+<div class="row"><span>Гость B2B, вчера без ОТ</span><b class="gr">59.0% (n=1594)</b></div><div class="bar"><i style="width:59%;background:var(--grn)"></i></div>
+<div class="row"><span>Гость B2B, вчера ОТ</span><b class="rd">50.2% (n=235)</b></div><div class="bar"><i style="width:50.2%;background:var(--red)"></i></div>
+<div class="tag">z = −2.54: после овертайма advantage исчезает полностью. Ставки B2B после ОТ пропускаем. Верно и для свежих гостей (44.8% с ОТ vs 53.6% без, z = −4.85).</div></div>
+<h2>💰 Бэктест правила (цены рынка 2021-23)</h2><div class="card">
+<table style="width:100%;border-collapse:collapse;font-size:13.5px" border="0">
+<tr style="color:var(--mut);font-size:11px;text-transform:uppercase"><td>Окно</td><td>Ставок</td><td>Yield</td><td>WR</td><td>DD</td></tr>
+<tr><td>Val 2021/22</td><td>100</td><td class="gr">+6.8%</td><td>62.0%</td><td>6.0%</td></tr>
+<tr><td>Test 2022/23</td><td>249</td><td class="gr">+6.3%</td><td>59.4%</td><td>10.2%</td></tr>
+<tr><td><b>Pooled</b></td><td><b>349</b></td><td class="gr"><b>+6.4%</b></td><td><b>60.2%</b></td><td>10.2%</td></tr>
+</table>
+<div class="note">Выделено значение: правило даёт стабильный плюс, но t = 1.37 (p = 0.17). Это real edge, но с высокой дисперсией. Для БетБума: доли 1.5-2% банка, не более, и всегда с фильтром по ОТ.</div>
+</div>
+<h2>🔮 Итерация 10: против Polymarket (разведка) <span class="pill exp">exploratory</span></h2>
+<div class="card">
+<div class="row"><span>Селтл B2B-правила vs Polymarket cash</span><b class="gr">60.2% vs 56.9%</b></div><div class="bar"><i style="width:60.2%;background:var(--grn)"></i></div>
+<div class="row"><span>Yield по крауд-цене</span><b class="gr">+7.3%</b></div><div class="bar"><i style="width:73;background:var(--grn)"></i></div>
+<div class="tag">n = 221, p = 0.24. Направление совпадает с бэктестом по букмекерским линиям (это и есть главная валидация эффекта на независимом рынке). Малые выборки: гипотеза возраст×B2B (старый гость 42.9% vs молодой 75.0%, z = 3.9) в watchlist.</div>
+</div>
+<div class="verdict" data-s="nhl all">✅ <b>Как играть в NHL (только это):</b> ставка на хозяина, когда гость на back-to-back, хозяин свежий, вчера у гостя был НЕ овертайм. Против вчерашнего OT в правила не берём. Доля банка: 1-2%. Остальные правила NHL в статусе наблюдения.</div>
+</section>
+<section data-s="foot all">
+<h2>⚽ Футбол: модельные сигналы <span class="pill dead">не использовать</span></h2>
+<div class="card">
+<div class="row"><span>Pooled 6 лиг (2024/25), yield модели</span><b class="rd">−15.1%</b></div><div class="bar"><i style="width:15.1%;background:var(--red)"></i></div>
+<div class="row"><span>ROI на фаворите (closing, бенчмарк)</span><b class="rd">−15.7%</b></div><div class="bar"><i style="width:15.7%;background:var(--red)"></i></div>
+<div class="row"><span>CLV (итерация 2)</span><b class="rd">−2.4%</b></div><div class="bar"><i style="width:2.4%;background:var(--red)"></i></div>
+<div class="tag">Во всех 6 лигах yield отрицательный, модель не бьёт baseline. Рынок closing odds эффективен.</div></div>
+<h2>⚡ Live-пул 2025/26 <span class="pill warn">осторожно</span></h2>
+<div class="card">
+<div class="row"><span>Forward-тест (итерация 4), ROI</span><b class="gr">+13.7%</b></div><div class="bar"><i style="width:13.7%;background:var(--grn)"></i></div>
+<div class="row"><span>Live 2025/26, ROI</span><b class="gr">+35.3%</b></div><div class="bar"><i style="width:35.3%;background:var(--grn)"></i></div>
+<div class="tag">В LIVE-пуле 185 сыгравших ставок, ROI большой, НО: forward t = 1.41 (незначимо), mean CLV +0.03% (нет подтверждения от рынка), выборка мала. Это не сигнал для ставок, это то, что продолжаем мониторить. Если t преодолеет 2.0 на n ≥ 400, пул станет боевым.</div></div>
+<div class="verdict" data-s="foot all">❌ <b>Футбол:</b> pre-match модельные ставки в БетБум не переносить. Верdict по всем 6 лигам стабильно отрицательный на closing-ценах. Есть только科研项目 live pool и мониторинг.</div>
+</section>
+<section data-s="fat all">
+<h2>😴 Фатиг в других видах <span class="pill dead">нулевой эффект</span></h2>
+<div class="card">
+<div class="row"><span>NFL: команда после bye</span><b>ROI −9.8% (n=231, t=−1.38)</b></div>
+<div class="row"><span>NCAAB: гость B2B vs свежий</span><b>z = 0.45 (ничего)</b></div>
+<div class="row"><span>NCAAB: хозяин B2B vs свежий гость</span><b>z = −1.75 (почти)</b></div>
+<div class="row"><span>ATP: фатиг-игрок</span><b>delta +1.5pp, z = 1.10 (ничего)</b></div>
+<div class="tag">Все проверки на NFL/NCAAB/ATP не дают значимых сигналов. Hockey NHL B2B - это по-прежнему <b>единственный</b> значимый фатиг-edge во всем исследовании (z от 3.2 до 3.9 на разных выборках).</div></div>
+<div class="verdict" data-s="fat all">🚫 <b>NFL, NCAAB, ATP, теннис:</b> фатиг-ставки не монетизировать. Числа красивые только в одиночных сплитах, пре-регистрация их не подтвердила.</div>
+</section>
+<section data-s="wl all">
+<h2>🔍 Watchlist: что мониторим, но пока не ставим</h2>
+<div class="card">
+<div class="row"><span>1. Возраст×B2B (старый гость слабее на B2B)</span><b class="yl">z≈3.9, n=42/60</b></div>
+<div class="row"><span>2. Гость B2B + Polymarket cash-цена</span><b class="yl">+7.3% yield, p=0.24</b></div>
+<div class="row"><span>3. Shift-TOI-нагрузка (boxscore как прокси)</span><b class="am">тест запущен</b></div>
+<div class="row"><span>4. Live-пул футбол (t-статистика)</span><b class="am">t=1.41, aim t≥2, n≥400</b></div>
+<div class="tag">Критерий перехода в позицию: t ≥ 2 на выборке ≥ 400 или готовая пре-регистрация отдельного окна. Пока всё это разведочные сигналы, не боевые правила.</div></div>
+<div class="verdict" data-s="wl all">🎯 <b>Итог для БетБум:</b> одно правило NHL (гость B2B без OT, ставка на хозяина) имеет статистическое обоснование (z = 3.34 в 10-летнем пуле, +6.4% yield в бэктесте по реальным ценам, +7.3% yield на независимом рынке Polymarket). Все остальное - либо минус, либо разведка.</div>
+</section>
+</div>
+<footer>Данные: epl-value-betting (football-datate.co.uk, NHL API, Polymarket, nflverse, tennis-data.co.uk), итерации 1-10, обновлено 22.11.2026. Статистическая значимость: z/t = тестовая статистика. Не является финансовой рекомендацией.</footer>
+<script>
+const tabs = document.querySelectorAll(".tab");
+tabs.forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("on"));
+  t.classList.add("on");
+  const sel = t.dataset.t;
+  document.querySelectorAll("section").forEach(s => {
+    s.style.display = (sel === "all" || (s.dataset.s && s.dataset.s.indexOf(sel) >= 0)) ? "" : "none";
+  });
+  window.scrollTo({top:0});
+}));
+</script>
+</body></html>
