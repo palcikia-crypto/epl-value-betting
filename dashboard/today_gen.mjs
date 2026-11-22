@@ -1,15 +1,33 @@
 // today.json (schema 3): расписание + B2B-флаги + ПОЛНЫЙ форвард-тест сезона 2026/27.
 const API = "https://api-web.nhle.com/v1/score/";
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function seasonDates() { const out = []; const d = new Date("2026-10-01T00:00:00Z"); const now = new Date(); while (d < now) { out.push(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() + 1); } return out; }
+async function getDay(d, tries = 4) { for (let i = 0; i < tries; i++) { try { const r = await fetch(API + d, { headers: { "User-Agent": "nhl-today-bot" } }); if (!r.ok) throw new Error("HTTP " + r.status); return await r.json(); } catch (e) { if (i === tries - 1) return null; await sleep(400 * (i + 1)); } } return null; }
 async function main() {
-  const nowJson = await (await fetch(API + "now")).json();
-  const near = [nowJson.prevDate, nowJson.currentDate, nowJson.nextDate].filter(Boolean);
+  const nowJson = await getDay("now");
+  const nearRaw = [nowJson.prevDate, nowJson.currentDate, nowJson.nextDate].filter(Boolean);
+  // окно строк: все даты gameWeek между prev и next (надёжно, всегда есть в /now)
+  const pw = nowJson.prevDate ? Date.parse(nowJson.prevDate) : 0;
+  const nw = nowJson.nextDate ? Date.parse(nowJson.nextDate) : 0;
+  const near = (nowJson.gameWeek || []).map((w) => w.date).filter((d) => (!pw || Date.parse(d) >= pw - 864e5) && (!nw || Date.parse(d) <= nw + 864e5));
+  for (const d of nearRaw) if (!near.includes(d)) near.push(d);
+  const failed = [];
   const allDays = {};
   const days = seasonDates();
-  for (let s = 0; s < days.length; s += 12) {
-    await Promise.all(days.slice(s, s + 12).map(async (d) => {
-      try { allDays[d] = await (await fetch(API + d)).json(); } catch (e) { allDays[d] = null; }
+  const unique = [...new Set(days.concat(near))].sort();
+  for (let s = 0; s < unique.length; s += 4) {
+    const batch = unique.slice(s, s + 4);
+    await Promise.all(batch.map(async (d) => {
+      const j = await getDay(d, 3);
+      allDays[d] = j;
+      if (!j) failed.push(d);
     }));
+    await sleep(300);
+  }
+  // дозагрузка упавших
+  for (const d of failed.slice()) {
+    const j = await getDay(d, 5);
+    if (j) { allDays[d] = j; failed.splice(failed.indexOf(d), 1); }
   }
   const games = [];
   for (const d of Object.keys(allDays).sort()) {
@@ -47,21 +65,21 @@ async function main() {
     const j = allDays[d] || {};
     for (const g of (j.games || [])) {
       const ot = !!(g.periodDescriptor && g.periodDescriptor.periodType && g.periodDescriptor.periodType !== "REG");
-      const flag = { d: j.currentDate || d, ot };
+      const flag = { d, ot };
       if (g.homeTeam) lastPlay[g.homeTeam.abbrev] = flag;
       if (g.awayTeam) lastPlay[g.awayTeam.abbrev] = flag;
     }
   }
+  const today = nowJson.currentDate || near[Math.floor(near.length / 2)] || "";
   const rows = [];
   for (const d of near) {
     const j = allDays[d] || {};
-    const day = j.currentDate || d;
     for (const g of (j.games || [])) {
       const at = g.awayTeam, ht = g.homeTeam;
       if (!at || !ht) continue;
       const ph = lastPlay[ht.abbrev], pa = lastPlay[at.abbrev];
-      const gap = (f) => f ? (Date.parse(day) - Date.parse(f.d)) / 864e5 : 99;
-      const bH = gap(ph) < 2, bA = gap(pa) < 2;
+      const gap = (f) => f ? Math.round((Date.parse(d) - Date.parse(f.d)) / 864e5) : 99;
+      const bH = gap(ph) < 2 && gap(ph) !== 0, bA = gap(pa) < 2 && gap(pa) !== 0;
       let tag = "FRESH", bet = null, why = "Обе команды свежие: преимущества по усталости нет.";
       if (bA && bH) { tag = "BOTH"; why = "Обе на B2B: эффект взаимно гасится."; }
       else if (bA && pa.ot) { tag = "OT"; why = "Гость на B2B, но вчера овертайм: по статистике преимущество пропадает."; }
@@ -75,9 +93,10 @@ async function main() {
   rows.sort((x, y) => (x.tag === "RULE" ? 0 : 1) - (y.tag === "RULE" ? 0 : 1) || (x.state === "FUT" ? 0 : 1) - (y.state === "FUT" ? 0 : 1) || x.day.localeCompare(y.day));
   const fs = await import("fs");
   fs.writeFileSync(new URL("./today.json", import.meta.url), JSON.stringify({
-    schema: 3, updated: new Date().toISOString(), source: "api-web.nhle.com",
+    schema: 3, updated: new Date().toISOString(), source: "api-web.nhle.com", today,
     forward_test: { season: "2026/27", n_games: seg.games, n_b2b: seg.b2b_n, b2b_home_win: seg.b2b_n ? seg.b2b_home_wins / seg.b2b_n : null, n_rested: seg.rested_n, rested_home_win: seg.rested_n ? seg.rested_home_wins / seg.rested_n : null, z, n_b2b_ot: seg.b2b_ot_n, b2b_ot_home_win: seg.b2b_ot_n ? seg.b2b_ot_home_wins / seg.b2b_ot_n : null },
+    debug: { near, failed_dates: failed, n_dates_fetched: Object.keys(allDays).length },
     rows }, null, 1));
-  console.log("today.json: rows", rows.length, "games", seg.games, "b2b_n", seg.b2b_n, "z", z);
+  console.log("today.json: rows", rows.length, "games", seg.games, "b2b_n", seg.b2b_n, "z", z, "failed", failed.length);
 }
 main().catch((e) => { console.error(e); process.exit(1); });
