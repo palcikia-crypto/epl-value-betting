@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#070a10">
 <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>EDGE Dashboard (v9)</title>
+<title>EDGE Dashboard (v10)</title>
 <style>
 :root{--bg:#070a10;--sur:#0e1420;--sur2:#131b2b;--ln:#1e293f;--fg:#eaf1fb;--mut:#8598b3;--grn:#31e981;--red:#ff5d5d;--yel:#ffce56;--acc:#53a9ff;--grad:linear-gradient(135deg,#53a9ff,#7c5cff);}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -223,43 +223,15 @@ function renderRows(j) {
       betCard +
       "</div>";
   }
-  if (upd) out = out + '<div class="tag">Данные NHL от ' + upd + " · обновление бота каждые 30 минут</div>';
+  if (upd) out = out + '<div class="tag">Данные NHL: ' + upd + " · live: NHL statsapi, пересчёт раз в 2 минуты</div>';
   gwrap.innerHTML = out;
 }
 function fmtIso(d) { return d.toISOString().slice(0, 10); }
-function computeRows(games, nowTs) {
-  const played = games.filter(function(g) { return g.played; });
-  const byTeam = {};
-  for (const g of played) { (byTeam[g.h] = byTeam[g.h] || []).push(g); (byTeam[g.a] = byTeam[g.a] || []).push(g); }
-  const restOf = function(t, d) { const arr = (byTeam[t] || []).map(function(x) { return x.d; }).filter(function(x) { return x < d; }).sort(); const prev = arr[arr.length - 1]; return prev ? Math.round((Date.parse(d) - Date.parse(prev)) / 864e5) : 99; };
-  const lastPlay = {};
-  for (const g of played) {
-    const flag = { d: g.d, ot: g.ot };
-    if (!lastPlay[g.h] || g.d >= lastPlay[g.h].d) lastPlay[g.h] = flag;
-    if (!lastPlay[g.a] || g.d >= lastPlay[g.a].d) lastPlay[g.a] = flag;
-  }
-  const today = fmtIso(new Date(nowTs));
-  const tomo = fmtIso(new Date(nowTs + 864e5));
-  const rows = [];
-  for (const g of games) {
-    if (g.d < today || g.d > tomo) continue;
-    const ph = lastPlay[g.h], pa = lastPlay[g.a];
-    const gap = function(f) { return f ? Math.round((Date.parse(g.d) - Date.parse(f.d)) / 864e5) : 99; };
-    const bH = gap(ph) < 2 && gap(ph) !== 0, bA = gap(pa) < 2 && gap(pa) !== 0;
-    let tag = "FRESH", bet = null, why = "Обе команды свежие: преимущества по усталости нет.";
-    if (bA && bH) { tag = "BOTH"; why = "Обе на B2B: эффект взаимно гасится."; }
-    else if (bA && pa.ot) { tag = "OT"; why = "Гость на B2B, но вчера овертайм: по статистике преимущество пропадает."; }
-    else if (bH && ph.ot) { tag = "OTH"; why = "Хозяин на B2B: хозяева в этой ситуации исторически слабее базы."; }
-    else if (bH) { tag = "FADE"; why = "Хозяин на B2B, гость свежий: исторически хозяин слабее базы. Ставки нет."; }
-    else if (bA) { tag = "RULE"; bet = "HOME"; why = "Гость второй матч подряд (B2B), хозяин свежий, вчера без OT. Рынок исторически недооценивает победу хозяина: в 10-летнем пуле z = 3.34, yield +6.4%."; }
-    const live = g.state === "LIVE";
-    const score = g.hs !== undefined && (live || g.state === "FINAL") ? (g.as + ":" + g.hs) : "";
-    rows.push({ day: g.d, away: { abbr: g.a, name: g.an }, home: { abbr: g.h, name: g.hn }, tag: tag, bet: bet, why: why, state: g.state, start: g.start, score: score });
-  }
-  rows.sort(function(x, y) { return (x.tag === "RULE" ? 0 : 1) - (y.tag === "RULE" ? 0 : 1) || (x.state === "FUT" ? 0 : 1) - (y.state === "FUT" ? 0 : 1) || x.day.localeCompare(y.day); });
-  return rows;
+function seasonUrl() {
+  const to = fmtIso(new Date(Date.now() + 2 * 864e5));
+  return "https://statsapi.web.nhle.com/api/v1/schedule?startDate=2026-10-01&endDate=" + to + "&expand=schedule.linescore";
 }
-function parseStatsapi(j) {
+function parseAll(j) {
   const games = [];
   for (const day of (j.dates || [])) {
     for (const g of (day.games || [])) {
@@ -270,27 +242,75 @@ function parseStatsapi(j) {
       const ot = ord === "OT" || ord === "SO" || (ls.currentPeriod || 0) > 3;
       const abs = g.status ? g.status.abstractGameState : "";
       const played = abs === "Final";
-      const state = played ? "FINAL" : (abs === "Live" || abs === "Preview" && g.status.detailedState === "In Progress" ? "LIVE" : "FUT");
+      const state = played ? "FINAL" : (abs === "Live" ? "LIVE" : "FUT");
       games.push({ d: (g.gameDate || "").slice(0, 10), h: ht.abbreviation || ht.name, hn: ht.name, a: at.abbreviation || at.name, an: at.name,
         hs: g.teams.home.score, as: g.teams.away.score, ot: ot, played: played, state: state, start: g.gameDate });
     }
   }
-  return computeRows(games, Date.now());
+  return games;
+}
+function computeSeg(games) {
+  const played = games.filter(function(g) { return g.played && g.hs !== undefined && g.hs !== null; });
+  const byTeam = {};
+  for (const g of played) { (byTeam[g.h] = byTeam[g.h] || []).push(g); (byTeam[g.a] = byTeam[g.a] || []).push(g); }
+  const restOf = function(t, d) { const arr = (byTeam[t] || []).map(function(x) { return x.d; }).filter(function(x) { return x < d; }).sort(); const prev = arr[arr.length - 1]; return prev ? Math.round((Date.parse(d) - Date.parse(prev)) / 864e5) : 99; };
+  const seg = { n: played.length, b2b_n: 0, b2b_hw: 0, rested_n: 0, rested_hw: 0, b2b_ot_n: 0, b2b_ot_hw: 0 };
+  for (const g of played) {
+    const ra = restOf(g.a, g.d), rh = restOf(g.h, g.d);
+    const hw = g.hs > g.as ? 1 : 0;
+    if (g.ot) { if (ra === 1 && rh >= 3) { seg.b2b_ot_n++; seg.b2b_ot_hw += hw; } continue; }
+    if (ra === 1 && rh >= 3) { seg.b2b_n++; seg.b2b_hw += hw; }
+    if (ra >= 3 && rh >= 3) { seg.rested_n++; seg.rested_hw += hw; }
+  }
+  let z = null;
+  if (seg.b2b_n > 0 && seg.rested_n > 0) {
+    const p0 = (seg.b2b_hw + seg.rested_hw) / (seg.b2b_n + seg.rested_n);
+    z = Math.round(100 * (seg.b2b_hw / seg.b2b_n - seg.rested_hw / seg.rested_n) / Math.sqrt(p0 * (1 - p0) * (1 / seg.b2b_n + 1 / seg.rested_n))) / 100;
+  }
+  return seg;
+}
+function renderFwd(seg) {
+  const el = document.getElementById("fwd");
+  if (!el || !seg || !seg.b2b_n) return;
+  el.innerHTML =
+    "<div class=\"kpis\">" +
+    "<div class=\"kpi\"><div class=\"l\">Гость B2B: домашних побед</div><div class=\"v\" style=\"color:var(--grn)\">" + Math.round(100 * seg.b2b_hw / seg.b2b_n) + "%</div><div class=\"n\">n = " + seg.b2b_n + " игр сезона</div></div>" +
+    "<div class=\"kpi\"><div class=\"l\">Оба свежие (база)</div><div class=\"v am\">" + Math.round(100 * seg.rested_hw / seg.rested_n) + "%</div><div class=\"n\">n = " + seg.rested_n + "</div></div>" +
+    "<div class=\"kpi\"><div class=\"l\">z-статистика</div><div class=\"v\">" + (seg.z === null ? "-" : seg.z) + "</div><div class=\"n\">порог доверия z ≥ 2</div></div>" +
+    "<div class=\"kpi\"><div class=\"l\">B2B после OT</div><div class=\"v yl\">" + (seg.b2b_ot_n ? Math.round(100 * seg.b2b_ot_hw / seg.b2b_ot_n) + "%" : "-") + "</div><div class=\"n\">n = " + seg.b2b_ot_n + "</div></div>" +
+    "</div>";
 }
 async function loadGames() {
   const gwrap = document.getElementById("gwrap");
-  let bot = null, sa = null;
-  try { bot = await fetchJSON("today.json?cb=" + Date.now(), 6000); } catch (e) {}
-  const from = fmtIso(new Date(Date.now() - 3 * 864e5)), to = fmtIso(new Date(Date.now() + 2 * 864e5));
-  const base = "https://statsapi.web.nhle.com/api/v1/schedule?startDate=" + from + "&endDate=" + to;
-  try { sa = parseStatsapi(await fetchJSON(base + "&expand=schedule.linescore", 12000)); } catch (e) {
-    try { sa = parseStatsapi(await fetchJSON(base, 12000)); } catch (e2) {}
+  // сезонный запрос: кэш на 60 минут в localStorage (это же источник форвард-теста)
+  const ckey = "nhl_season_cache_v1";
+  let seasonJ = null;
+  try {
+    const cached = JSON.parse(localStorage.getItem(ckey) || "null");
+    if (cached && Date.now() - cached.t < 3600000) seasonJ = cached.j;
+  } catch (e) {}
+  if (!seasonJ) {
+    try {
+      seasonJ = await fetchJSON(seasonUrl(), 20000);
+      try { localStorage.setItem(ckey, JSON.stringify({ t: Date.now(), j: seasonJ })); } catch (e) {}
+    } catch (e) {}
   }
-  if ((!sa || !sa.length) && bot && Array.isArray(bot.rows) && bot.rows.length) sa = bot.rows;
-  if (sa && sa.length) { renderRows({ rows: sa, updated: bot && bot.updated, forward_test: bot && bot.forward_test }); return; }
+  if (seasonJ) {
+    const games = parseAll(seasonJ);
+    const seg = computeSeg(games);
+    renderFwd(seg);
+    const rows = computeRows(games, Date.now());
+    if (rows.length) { renderRows({ rows: rows, updated: new Date().toISOString(), source: "statsapi (браузер)" }); return; }
+  }
+  let bot = null;
+  try { bot = await fetchJSON("today.json?cb=" + Date.now(), 6000); } catch (e) {}
+  if (bot && Array.isArray(bot.rows) && bot.rows.length) {
+    renderRows({ rows: bot.rows, updated: bot.updated, forward_test: bot.forward_test }); return;
+  }
   gwrap.innerHTML = '<div class="stale">Не удалось загрузить расписание NHL с сервера. Подожди минуту и обнови страницу.</div>';
 }
 setInterval(loadGames, 120000);
+
 
 </script>
 </body></html>
