@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Итерация 10 — B2B vs Polymarket, shift-TOI, возраст</title>
+<style>
+  :root { --bg:#0e1117; --card:#161b22; --fg:#e6edf3; --muted:#8b949e; --red:#f85149; --green:#3fb950; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; padding:24px; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  h2 { font-size:17px; margin:18px 0 6px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:14px; }
+  nav a { color:var(--accent); text-decoration:none; margin-right:16px; font-size:14px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; font-size:14px; margin:10px 0; }
+  th,td { padding:9px 12px; text-align:left; border-bottom:1px solid #21262d; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  .verdict { background:linear-gradient(135deg,#1a1f2b,#161b22); border:1px solid #30363d; border-radius:12px; padding:16px; margin-top:12px; font-size:15px; line-height:1.6; }
+  .pos { color:var(--green); } .neg { color:var(--red); } .mut { color:var(--muted); } code { background:#21262d; padding:2px 6px; border-radius:6px; }
+</style>
+</head>
+<body>
+<h1>🧬 Итерация 10</h1>
+<div class="sub">Селтл B2B/B2B+OT против Polymarket-цен · shift-TOI-нагрузка (boxscore как прокси закрытого /shifts) · возраст состава (TOW-вес по TOI) и выносливость</div>
+<nav><a href="index.html">EPL бэктест</a><a href="iter7.html">Итерация 7</a><a href="iter8.html">Итерация 8</a><a href="iter9.html">Итерация 9</a></nav>
+<div id="app">Загрузка…</div>
+<script>
+const pct=(x,d=1)=>x==null?"—":(x*100).toFixed(d)+"%";
+const cls=v=>(v==null||v>=0)?"pos":"neg";
+fetch("iter10.json").then(r=>r.json()).then(j=>{
+const s=j.polymarket_settle||{}, t=j.toi||{}, a=j.age||{};
+let rows = "";
+for (const [k,v] of Object.entries(s)) {
+  rows += "<tr><td>"+k+"</td><td>"+(v.n??"—")+"</td><td>"+pct(v.actual_home_win)+"</td><td>"+pct(v.expected_home_win)+"</td><td class='"+cls(v.yield)+"'>"+pct(v.yield,2)+"</td><td>"+(v.p_value??"—")+"</td></tr>";
+}
+let toiRows = "";
+if (t.n_games_with_toi) for (const [k,v] of Object.entries(t)) if (v && v.home_win!=null)
+  toiRows += "<tr><td>"+k+"</td><td>"+v.n+"</td><td>"+pct(v.home_win)+"</td></tr>";
+let ageRows = "";
+if (a.n_games) for (const [k,v] of Object.entries(a)) if (v && v.home_win!=null)
+  ageRows += "<tr><td>"+k+"</td><td>"+v.n+"</td><td>"+pct(v.home_win)+"</td></tr>";
+document.getElementById("app").innerHTML = `
+
+<h2>1. Селтл B2B-сигналов против Polymarket-цен (бесплатный крауд-рынок)</h2>
+<table><tr><th>Группа</th><th>Игр</th><th>Факт home win</th><th>Вложено (poly)</th><th>Yield по poly-цене</th><th>p-value</th></tr>${rows}</table>
+<div class="verdict">
+• Polymarket здесь не ставка сама по себе, а бесплатная цена для честного селтла правил 2026/27, пока у SBR нет линий сезона.<br>
+• Вопрос: переоценивает ли крауд усталость B2B (правило мертво) или недооценивает (есть цена для монетизации): сравни "факт" против "вложено".<br>
+• Доверие — только при t≥2 и n≥400; малые n правее интерпретируются по всем правилам проекта.
+</div>
+
+<h2>2. shift-TOI: нагрузка вчерашней игры (boxscore как прокси закрытого /shifts)</h2>
+${t.n_games_with_toi
+  ? "<table><tr><th>Состояние</th><th>Игр</th><th>Побед хозяина</th></tr>"+toiRows+"</table><div class='verdict'>"+(t.z_b2b_heavy_vs_light!=null?"• z(B2B после тяжёлого распределения TOI vs лёгкого) = "+t.z_b2b_heavy_vs_light+". ИССЛЕДОВАТЕЛЬСКАЯ гипотеза: не мемонизировать до пре-регистрации и большего пула.":"• Ячейки B2B не набрали n>10 — копим кэш boxscore следующими прогонами.")+"</div>"
+  : "<div class='verdict'>Кэш boxscore пуст. Запусти: <code>python3 iter10/run_iter10.py --fetch-boxscores --fetch-ages</code></div>"}
+
+<h2>3. Возраст состава (TOI-вес) и взаимодействие возраст × B2B</h2>
+${a.n_games
+  ? "<table><tr><th>Группа</th><th>Игр</th><th>Побед хозяина</th></tr>"+ageRows+"</table><div class='verdict'>• corr(diff средних возрастов, победа хозяина) = "+a.corr_age_diff_home_win+" на "+a.n_games+" играх ("+a.players_with_age+" игроков)."+(a.z_b2b_age_split!=null?"<br>• Возраст × B2B: z = "+a.z_b2b_age_split+". <b>ИССЛЕДОВАТЕЛЬСКАЯ гипотеза</b> — проверять после пре-регистрации, ячейки малы.":"")+"</div>"
+  : "<div class='verdict'>Нужен кэш: <code>python3 iter10/run_iter10.py --fetch-boxscores --fetch-ages</code></div>"}
+
+<div class="verdict"><b>Запуск:</b> <code>python3 iter10/run_iter10.py</code> — селтл по кэшу Polymarket; <code>--fetch-boxscores</code> / <code>--fetch-ages</code> — докачка нагрузки и возрастов. Данные: outputs/iter10.json, iter10_toi.csv, iter10_age.csv.</div>
+`;
+}).catch(()=>{document.getElementById("app").innerHTML="<div class='verdict'>iter10.json не найден. Запусти python3 iter10/run_iter10.py</div>"});
+</script>
+</body>
+</html>

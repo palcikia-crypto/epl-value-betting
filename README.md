@@ -1,4 +1,4 @@
-# ⚽ EPL Value Betting — End-to-End Prediction & Backtest Pipeline
+| `iter10/run_iter10.py` | Итерация 10: селтл B2B/B2B+OT против Polymarket-цен, shift-TOI-нагрузка (boxscore как прокси /shifts), возраст состава (landing), взаимодействие возраст×B2B |\nsuccessfully downloaded text file (SHA: 6bc1e4a53311a494c29a703c9b8c03dd665535d5)# ⚽ EPL Value Betting — End-to-End Prediction & Backtest Pipeline
 
 Production-пайплайн: данные football-data.co.uk → leak-free фичи → XGBoost/LogReg →
 value betting бэктест по Pinnacle closing odds → Walk-Forward → **честный вердикт**.
@@ -34,7 +34,7 @@ python3 dashboard/serve.py 8000  # web-дашборд: http://localhost:8000
 | `iter7/run_iter7.py` | Итерация 7: архив линий SBR (Wayback Machine), история НХЛ 2019–2025 (7 488 игр), тюнинг Elo (K/MOV/rollback), B2B-правило против закрытых линий |
 | `iter8/run_iter8.py` | Итерация 8: пул SBR-линий НХЛ 10 сезонов (9 921 игра), B2B до t-теста, свежий OOS 2025/26, paper-трекер 2026/27, разведка волейбола |
 | `iter9/run_iter9.py` | Итерация 9: Polymarket (крауд-цены NHL 25/26+26/27), усталость по 4 спортам (NFL бай, NCAAB B2B, ATP плотный матч, NHL B2B+OT), сводный стек |
-| `dashboard/` | Web-дашборд (zero-dependency, stdlib http.server), 9 страниц: бэктест / итерации 2–9 |
+| `dashboard/` | Web-дашборд (zero-dependency, stdlib http.server), 10 страниц: бэктест / итерации 2–10 |
 | `outputs/` | `results.json`, `iter2.json`–`iter9.json`, `live_nhl_2627.csv`, `live_2526.csv`, `test_bets.csv`, `features_full.csv`, PNG |
 
 ## Анти-утечная дисциплина
