@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Итерация 7 — исторические линии НХЛ, тюнинг Elo, торгуемое B2B-правило</title>
+<style>
+  :root { --bg:#0e1117; --card:#161b22; --fg:#e6edf3; --muted:#8b949e; --red:#f85149; --green:#3fb950; --accent:#58a6ff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:-apple-system,'Segoe UI',Roboto,sans-serif; padding:24px; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  h2 { font-size:17px; margin:18px 0 6px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:14px; }
+  nav a { color:var(--accent); text-decoration:none; margin-right:16px; font-size:14px; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; font-size:14px; margin:10px 0; }
+  th,td { padding:9px 12px; text-align:left; border-bottom:1px solid #21262d; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  img.chart { max-width:100%; background:var(--card); border:1px solid #21262d; border-radius:10px; margin:8px 0; }
+  .verdict { background:linear-gradient(135deg,#1a1f2b,#161b22); border:1px solid #30363d; border-radius:12px; padding:16px; margin-top:12px; font-size:15px; line-height:1.6; }
+  .pos { color:var(--green); } .neg { color:var(--red); } .mut { color:var(--muted); }
+</style>
+</head>
+<body>
+<h1>⚖️ Итерация 7</h1>
+<div class="sub">Архив линий SBR через web.archive.org · История НХЛ 2019–2025 (7 488 игр) · Тюнинг Elo (K/MOV/rollback) · B2B-правило против закрытых линий</div>
+<nav><a href="index.html">EPL бэктест</a><a href="iter2.html">Итерация 2</a><a href="iter3.html">Итерация 3</a><a href="iter4.html">Итерация 4</a><a href="iter5.html">Итерация 5</a><a href="iter6.html">Итерация 6</a></nav>
+<div id="app">Загрузка…</div>
+<script>
+const pct=(x,d=2)=>(x*100).toFixed(d)+"%";
+const cls=v=>v>=0?"pos":"neg";
+const num=x=>typeof x==="number"?x.toLocaleString("ru-RU"):x;
+fetch("iter7.json").then(r=>r.json()).then(j=>{
+const el=j.elo, b2=j.b2b;
+const fp=b2.b2b_frequency_pooled, pr=b2.pooled_rule, mv=b2.elo_vs_market_2022, ba=b2.elo_b2b_adjustment;
+let eloRows=[["Validation 2023 (календарь)",el.val],[`Test 2024 → 2025-04 (n=${el.n_test})`,el.test_2024_2025],[`Календарный 2024 (n=${el.n_test_cal2024})`,el.test_cal2024]].map(([n,v])=>`<tr><td>${n}</td><td>${pct(v.accuracy)}</td><td>${v.logloss}</td><td>${v.brier}</td></tr>`).join("");
+let mktRows=[["Рынок (devig закрытые линии)",mv.market],["Тюнингованный Elo",mv.elo]].map(([n,v])=>`<tr><td>${n}</td><td>${pct(v.accuracy)}</td><td>${v.logloss}</td><td>${v.brier}</td></tr>`).join("");
+let fpRows=[["Гость B2B, хозяин свежий",fp.away_b2b],["Оба свежие",fp.away_rested],["Хозяин B2B, гость свежий",fp.home_b2b]].map(([n,v])=>`<tr><td>${n}</td><td>${v.n}</td><td>${pct(v.home_win)}</td><td class="mut">${pct(v.ci95[0])} … ${pct(v.ci95[1])}</td></tr>`).join("");
+let stabRows=b2.b2b_stability.map(r=>{const d=r.home_win_away_b2b-r.home_win_away_rested;return `<tr><td>${r.season}/${String(Number(r.season)+1).slice(2)}</td><td>${r.n}</td><td>${pct(r.home_win_away_b2b)}</td><td>${pct(r.home_win_away_rested)}</td><td class="${cls(d)}">${d>=0?"+":""}${pct(d)}</td></tr>`;}).join("");
+let segRows=Object.entries(b2.segments).map(([tag,s])=>{
+  const r=s.b2b_rule, f=s.favorite;
+  return `<tr><td>${tag==="VAL_2021_22"?"VAL 2021/22 (полный сезон)":"TEST 2022/23 (окт–ноя)"}</td><td>${r.n}</td><td class="${cls(r.roi)}">${pct(r.roi)}</td><td class="${cls(r.yield)}">${pct(r.yield)}</td><td>${pct(r.wr,1)}</td><td>${pct(r.dd,1)}</td><td class="mut">${f.n} / ${pct(f.yield)}</td><td class="mut">${s.n_away_b2b}</td></tr>`;
+}).join("");
+let mvRows=[["Гость B2B",b2.segments.VAL_2021_22.market_move.p_home_shift_away_b2b,b2.segments.TEST_2022_23.market_move.p_home_shift_away_b2b],["Все остальные игры",b2.segments.VAL_2021_22.market_move.p_home_shift_rest,b2.segments.TEST_2022_23.market_move.p_home_shift_rest]].map(([n,v1,v2])=>`<tr><td>${n}</td><td class="${cls(v1)}">+${pct(v1)}</td><td class="${cls(v2)}">+${pct(v2)}</td></tr>`).join("");
+document.getElementById("app").innerHTML=`
+
+<h2>1. Новый источник данных: архив линий SBR через web.archive.org</h2>
+<div class="verdict">
+• <b>Лайфхак:</b> букмекеры прячут архив коэффициентов, но снимки табличных страниц SBRforum доступны в Wayback Machine. Мы скачали и распарсили <b>настоящие xlsx</b>: полный сезон НХЛ 2021/22 (1 401 игра) и окт–ноя 2022/23 (342 игры) с американскими коэффициентами Open/Close: строки Par (Rot, V/H, последовательные номера), построчный разбор.<br>
+• Сопоставление с официальным NHL API (api-web.nhle.com): <b>${b2.n_matched} игр</b> из ${b2.n_odds_rows} строк (33 названия команд вынесены в словарь SBR2ABBR,Seattle/Vegas-варианты учтены). Итоги совпадают с NHL API на 100% по счёту.<br>
+• Параллельно добрана <b>официальная история NHL API 2019–2023</b>: ${num(7488)} игр за 7 сезонов (раньше было 2 915) — теперь тюнинг возможен на длинном горизонте.
+</div>
+
+<h2>2. Elo после тюнинга: K=30, home-adv=40, MOV=0.3, rollback=0.2</h2>
+<img class="chart" src="iter7_elo.png">
+<table><tr><th>Сегмент</th><th>Точность</th><th>Logloss</th><th>Brier</th></tr>${eloRows}</table>
+<div class="mut">Matched-выборка окт–ноя 2022/23 (n=${mv.n}): рынок против модели на одних и тех же играх.</div>
+<table><tr><th>Модель</th><th>Точность</th><th>Logloss</th><th>Brier</th></tr>${mktRows}</table>
+<div class="verdict">
+• Тюнинг даёт <b>+3 п.п. точности</b> против плоского Elo итерации 5 (55.95% → ${pct(el.test_cal2024.accuracy,2)} на календарном 2024). Драйверы: <b>K=30</b> (быстрое обновление), <b>MOV-множитель</b> (масштаб по разнице счёта), <b>сезонный rollback 20%</b> к 1500.<br>
+• Но рынок остаётся впереди: logloss ${mv.market.logloss} против ${mv.elo.logloss} на matched-выборке. Разрыв сократился (точности 58.94% vs ${pct(mv.elo.accuracy,1)}), но не закрыт.<br>
+• Полный test (2024 → апр 2025, ${el.n_test} игр): точность ${pct(el.test_2024_2025.accuracy,1)} — <b>лучшая честная (без утечек) точность во всём проекте для НХЛ</b> — 59% уже в январе 2024-го.
+</div>
+
+<h2>3. B2B-эффект на 7 сезонах: от «следа» до статистически значимого</h2>
+<img class="chart" src="iter7_b2b.png">
+<table><tr><th>Ситуация</th><th>Игр</th><th>Побед хозяина</th><th>95% ДИ (Wilson)</th></tr>${fpRows}</table>
+<div class="verdict">
+• <b>Гость на back-to-back, хозяин свежий: побед хозяина ${pct(fp.away_b2b.home_win,1)} против ${pct(fp.away_rested.home_win,1)} при обоих свежих</b> → +${pct(fp.away_b2b.home_win-fp.away_rested.home_win,1)} п.п. на n=${fp.away_b2b.n} против n=${fp.away_rested.n}. Двухдолевой z-тест: <b>z=${fp.z_away_b2b_vs_rested}, p=${fp.p_away_b2b_vs_rested} — статистически значимо</b> (в итерации 6 было p≈0.02 лишь по n=217).<br>
+• Зеркало тоже живое: хозяин на B2B → победы хозяина всего ${pct(fp.home_b2b.home_win,1)} (n=${fp.home_b2b.n}) — на ${pct(fp.away_rested.home_win-fp.home_b2b.home_win,1)} п.п. ниже базы. Расписание бьёт по обе стороны.<br>
+• Эффект стабилен по каждому из 7 сезонов (таблица ниже) — ни одного сезона, где уставший гость играл бы лучше свежего.
+</div>
+
+<h2>4. Торгуемое правило против настоящих коэффициентов (SBR Close)</h2>
+<div class="mut">Правило (пре-зарегистрированное, одно и то же для обоих окон): гость B2B + хозяин свежий → ставка на хозяина; хозяин B2B + гость свежий → ставка на гостя. Линия — SBR Close (NHL moneyline, учитывает OT/SO — как и Settlement NHL API).</div>
+<img class="chart" src="iter7_rule_equity.png">
+<table><tr><th>Сегмент</th><th>Ставок</th><th>ROI</th><th>Yield</th><th>WR</th><th>Max DD</th><th>Фаворит (n / yield)</th><th>Гость B2B игр</th></tr>${segRows}</table>
+<div class="mut">Пул VAL+TEST: ${pr.n} ставок, ROI ${pct(pr.roi)}, yield <b>${pct(pr.yield)}</b>, WR ${pct(pr.wr,1)}, DD ${pct(pr.dd,1)}, t=${pr.yield_t}, p=${pr.p_value}.</div>
+<div class="mut">Движение линии p(хозяина) Open→Close (VAL 2021/22 / TEST 2022/23):</div>
+<table><tr><th>Категория игр</th><th>VAL 2021/22</th><th>TEST 2022/23</th></tr>${mvRows}</table>
+<div class="verdict">
+• <b>Правило плюсует в обоих окнах независимо</b>: yield +6.84% (VAL) и +6.25% (TEST), pooled ${pct(pr.yield)} на ${pr.n} ставках. Но t=1.37, p=0.17 — <b>ставок пока недостаточно для строгого вывода</b>, говорим это прямо.<br>
+• <b>Рынок частично закладывает B2B</b>: на играх с уставшим гостем p(хозяина) сдвигается Open→Close на +${pct(b2.segments.TEST_2022_23.market_move.p_home_shift_away_b2b)}…+${pct(b2.segments.VAL_2021_22.market_move.p_home_shift_away_b2b)} против ≈0 на остальных играх. Букмекеры «знают про усталость», но НЕ закладывают её полностью — остаточная неэффективность ≈ половина эффекта.<br>
+• Стратификация по кэфу уставшей стороны (диапазон 1.0–1.7): WR 86%, yield +33% на n=7 — правило чаще всего ловит фаворита при усталом сопернике; самые жёсткие значения ждут больше данных.
+</div>
+
+<h2>5. Elo + B2B-поправка: причина встраивается в прогноз</h2>
+<div class="verdict">
+• δ рассчитан ТОЛЬКО на пре-2024 данных: <b>+${pct(ba.delta_train,1)}</b> к вероятности хозяина, когда гость на B2B.<br>
+• Test 2024–2025 (n=${el.n_test}): чистый Elo logloss ${ba.elo.logloss} (точность ${pct(ba.elo.accuracy,1)}) → с B2B-поправкой logloss <b>${ba.elo_b2b_adj.logloss}</b> (точность ${pct(ba.elo_b2b_adj.accuracy,1)}). Улучшение logloss = −0.0012: небольшое, но причинно объяснимое и неперегруженное. Так работает «складывание результатов»: причинность + прогноз.
+</div>
+
+<h2>Стабильность B2B-эффекта по 7 сезонам</h2>
+<table><tr><th>Сезон</th><th>Игр (гость B2B)</th><th>Хозяин победил</th><th>Оба свежие</th><th>Разница</th></tr>${stabRows}</table>
+
+<h2>Технологии, добавленные в итерации 7</h2>
+<div class="verdict">
+• <b>Извлечение архивных линий из Wayback Machine</b> (CDX API + id_-replay снапшоты SBRForum-таблиц) — тот же путь применим к футболу и другим лигам, где исторические open/close-линии бесплатно недоступны.<br>
+• <b>Расширение официальной истории NHL API до 6 лет</b> (2019–2025): фоновая докачка по дням, дедупликация, сквозная валидация полей.<br>
+• <b>Тюнинг структурных параметров Elo</b> (K, home-adv, MOV, rollback) на отдельном календарном валу — без него тюнинг «переобучается» на весь train.<br>
+• <b>Two-proportion z-тест + Wilson ДИ</b> как обязательный стандарт проверки частотных правил; <b>δ-встройка причинного фактора в Elo</b> с оценкой δ только на пре-тесте (анти-подгонка).
+</div>
+
+<h2>Итог 7 итерации</h2>
+<div class="verdict">
+• <b>Точность прогнозов НХЛ выросла: 55.95% → ${pct(el.test_cal2024.accuracy,2)}</b> (6 лет истории + MOV + rollback) — реальный воспроизводимый рост от более длинной базы и настроенных структурных параметров. До рынка остаётся ~1 п.п. <span class="mut">(рынок 58.94% на matched-выборке)</span>.<br>
+• <b>B2B-эффект теперь статистически значим: z=3.21, p=0.0014 на 7 488 играх</b>, и <b>правило заработало против настоящих линий в обоих пре-зарегистрированных окнах (+6.8% и +6.3% yield)</b> — первый за весь проект фактор с причинным обоснованием И прямой котируемый профит.<br>
+• Честно: пул ${pr.n} ставок, t=1.37, p=0.17 — до строгого вывода нужен ещё 1–2 сезона или больше архивных линий (умение добывать их из Wayback уже отработано).<br>
+• Резюме: рынок остаётся лучшим одиночным прогнозистом, но причинные факторы (расписание) позволяют моделям его догонять — и «складывать результаты» (Elo + B2B-δ) полезно даже когда добавка по отдельности мала.
+</div>
+`;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+{
+ "elo": {
+  "best_params": {
+   "k": 30.0,
+   "home_adv": 40.0,
+   "mov": 0.3,
+   "rtm": 0.2
+  },
+  "val_logloss": 0.6648,
+  "val": {
+   "accuracy": 0.5947,
+   "logloss": 0.6648,
+   "brier": 0.2362
+  },
+  "test_2024_2025": {
+   "accuracy": 0.5878,
+   "logloss": 0.6631,
+   "brier": 0.2355
+  },
+  "test_cal2024": {
+   "accuracy": 0.5911,
+   "logloss": 0.6624,
+   "brier": 0.2352
+  },
+  "n_test": 2295,
+  "n_test_cal2024": 1536
+ },
+ "unmatched_teams": [
+  "?"
+ ],
+ "n_odds_rows": 1742,
+ "b2b": {
+  "n_matched": 1532,
+  "market_all": {
+   "accuracy": 0.639,
+   "logloss": 0.6453,
+   "brier": 0.2267
+  },
+  "segments": {
+   "VAL_2021_22": {
+    "b2b_rule": {
+     "n": 100,
+     "roi": 0.072,
+     "yield": 0.0684,
+     "wr": 0.62,
+     "dd": 0.06
+    },
+    "favorite": {
+     "n": 461,
+     "roi": 0.2286,
+     "yield": 0.0462,
+     "wr": 0.6334,
+     "dd": 0.1464
+    },
+    "b2b_strata": [
+     {
+      "odds_bucket": "(1.0,1.7]",
+      "n": 7,
+      "roi": 0.0235,
+      "yield": 0.3314,
+      "wr": 0.8571,
+      "dd": 0.01
+     },
+     {
+      "odds_bucket": "(1.7,2.2]",
+      "n": 8,
+      "roi": -0.0051,
+      "yield": -0.0641,
+      "wr": 0.5,
+      "dd": 0.0215
+     },
+     {
+      "odds_bucket": "(2.2,9.0]",
+      "n": 2,
+      "roi": 0.0049,
+      "yield": 0.2407,
+      "wr": 0.5,
+      "dd": 0.01
+     }
+    ],
+    "n_away_b2b": 79,
+    "n_home_b2b": 21,
+    "home_win_rate_away_b2b": 0.6329,
+    "home_win_rate_base": 0.5466,
+    "market_move": {
+     "p_home_shift_away_b2b": 0.0184,
+     "p_home_shift_rest": -0.0004
+    }
+   },
+   "TEST_2022_23": {
+    "b2b_rule": {
+     "n": 249,
+     "roi": 0.1686,
+     "yield": 0.0625,
+     "wr": 0.5944,
+     "dd": 0.102
+    },
+    "favorite": {
+     "n": 1071,
+     "roi": 0.128,
+     "yield": 0.01,
+     "wr": 0.6415,
+     "dd": 0.2904
+    },
+    "b2b_strata": [
+     {
+      "odds_bucket": "(1.0,1.7]",
+      "n": 14,
+      "roi": 0.002,
+      "yield": 0.0141,
+      "wr": 0.7143,
+      "dd": 0.0199
+     },
+     {
+      "odds_bucket": "(1.7,2.2]",
+      "n": 12,
+      "roi": 0.0661,
+      "yield": 0.5434,
+      "wr": 0.8333,
+      "dd": 0.0199
+     },
+     {
+      "odds_bucket": "(2.2,9.0]",
+      "n": 9,
+      "roi": 0.0203,
+      "yield": 0.2222,
+      "wr": 0.4444,
+      "dd": 0.0199
+     }
+    ],
+    "n_away_b2b": 179,
+    "n_home_b2b": 70,
+    "home_win_rate_away_b2b": 0.5978,
+    "home_win_rate_base": 0.5322,
+    "market_move": {
+     "p_home_shift_away_b2b": 0.0151,
+     "p_home_shift_rest": -0.0011
+    }
+   }
+  },
+  "pooled_rule": {
+   "n": 349,
+   "roi": 0.2528,
+   "yield": 0.0637,
+   "wr": 0.6017,
+   "dd": 0.102,
+   "yield_t": 1.369,
+   "p_value": 0.1711
+  },
+  "b2b_stability": [
+   {
+    "season": "2019",
+    "n": 105,
+    "home_win_away_b2b": 0.5333,
+    "home_win_away_rested": 0.5468
+   },
+   {
+    "season": "2020",
+    "n": 90,
+    "home_win_away_b2b": 0.5,
+    "home_win_away_rested": 0.533
+   },
+   {
+    "season": "2021",
+    "n": 121,
+    "home_win_away_b2b": 0.6198,
+    "home_win_away_rested": 0.5304
+   },
+   {
+    "season": "2022",
+    "n": 239,
+    "home_win_away_b2b": 0.5983,
+    "home_win_away_rested": 0.5136
+   },
+   {
+    "season": "2023",
+    "n": 197,
+    "home_win_away_b2b": 0.5888,
+    "home_win_away_rested": 0.5237
+   },
+   {
+    "season": "2024",
+    "n": 217,
+    "home_win_away_b2b": 0.6267,
+    "home_win_away_rested": 0.524
+   },
+   {
+    "season": "2025",
+    "n": 134,
+    "home_win_away_b2b": 0.597,
+    "home_win_away_rested": 0.5719
+   }
+  ],
+  "b2b_frequency_pooled": {
+   "away_b2b": {
+    "n": 1103,
+    "home_win": 0.5902,
+    "ci95": [
+     0.5609,
+     0.6189
+    ]
+   },
+   "away_rested": {
+    "n": 5604,
+    "home_win": 0.5377,
+    "ci95": [
+     0.5246,
+     0.5507
+    ]
+   },
+   "home_b2b": {
+    "n": 360,
+    "home_win": 0.4167,
+    "ci95": [
+     0.3669,
+     0.4682
+    ]
+   },
+   "z_away_b2b_vs_rested": 3.205,
+   "p_away_b2b_vs_rested": 0.0014
+  }
+ },
+ "elo_vs_market_2022": {
+  "market": {
+   "accuracy": 0.5894,
+   "logloss": 0.6673,
+   "brier": 0.2372
+  },
+  "elo": {
+   "accuracy": 0.5728,
+   "logloss": 0.6792,
+   "brier": 0.2429
+  },
+  "n": 302
+ },
+ "elo_b2b_adjustment": {
+  "delta_train": 0.0434,
+  "elo": {
+   "accuracy": 0.5878,
+   "logloss": 0.6631,
+   "brier": 0.2355
+  },
+  "elo_b2b_adj": {
+   "accuracy": 0.5856,
+   "logloss": 0.6619,
+   "brier": 0.235
+  }
+ }
+}
