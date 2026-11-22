@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#070a10">
 <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>EDGE Dashboard (v10)</title>
+<title>EDGE Dashboard (v11)</title>
 <style>
 :root{--bg:#070a10;--sur:#0e1420;--sur2:#131b2b;--ln:#1e293f;--fg:#eaf1fb;--mut:#8598b3;--grn:#31e981;--red:#ff5d5d;--yel:#ffce56;--acc:#53a9ff;--grad:linear-gradient(135deg,#53a9ff,#7c5cff);}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -74,6 +74,7 @@ footer{color:var(--mut);font-size:11px;padding:20px 16px 40px;line-height:1.6;}
 <button class="tab" data-t="nhl">🏒 Хоккей</button>
 <button class="tab" data-t="foot">⚽ Футбол</button>
 <button class="tab" data-t="wl">🔍 Watchlist</button>
+<button class="tab" data-t="ai">🧠 ИИ</button>
 </div></div>
 <div class="wrap">
 <section data-s="today nhl all">
@@ -153,6 +154,21 @@ footer{color:var(--mut);font-size:11px;padding:20px 16px 40px;line-height:1.6;}
 <div class="verdict">🎯 <b>Итог для БетБум:</b> единственное правило с аргументами (z = 3.34 в 10-летнем пуле, +6.4% yield по ценам рынка, +7.3% yield на независимом рынке Polymarket) - NHL гость B2B без OT, ставка на хозяина. Остальное - минус или разведка.</div>
 </section>
 </div>
+
+<section data-s="ai all">
+<h2>🧠 ИИ-модель сезона <span class="pill exp">прогон в браузере: обучается на всех играх сезона</span></h2>
+<div class="card"><div id="aiKpis"><div class="tag">Модель (логистическая регрессия) обучается прямо на сыгранных матчах сезона 2026/27: признаки - отдых, B2B, форма 5 игр, разница голов. Train 70% / Test 30%. Жду данные…</div></div></div>
+<h2>🤖 Прогнозы на ближайшие матчи <span class="pill warn">модель + правило вместе</span></h2>
+<div class="card"><div id="aiGames"><div class="tag">Появятся после обучения модели.</div></div></div>
+</section>
+
+<section data-s="ai all">
+<h2>🧊 Глубокий разбор игроков <span class="pill exp">NHL API: возраст, габариты, форма, очки</span></h2>
+<div id="aiPlayersWrap"><div class="tag">Раскрой матч ниже: загрузятся составы обеих команд, по каждому игроку возраст, рост, вес, позиция, гражданство, очки сезона и форма последних пяти игр.</div></div>
+<div id="aiPlayers"></div>
+<div class="tag">Источник всех данных: официальный NHL statsapi, прямой доступ из браузера. Статистика игроков кэшируется на 6 часов.</div>
+</section>
+
 <footer>Не является финансовой рекомендацией.</footer>
 <script>
 const tabs = document.querySelectorAll(".tab");
@@ -311,6 +327,191 @@ async function loadGames() {
 }
 setInterval(loadGames, 120000);
 
+
+</script>
+
+<script>
+// ================= ИИ-модуль =================
+const SAPI = "https://statsapi.web.nhle.com/api/v1";
+const AICl = function(x, a, b) { return Math.max(a, Math.min(b, x)); };
+const AIsg = function(x) { return 1 / (1 + Math.exp(-x)); };
+function aiParse(j) {
+  const out = [];
+  for (const day of (j.dates || [])) {
+    for (const g of (day.games || [])) {
+      if (!g.teams || !g.teams.away || !g.teams.home) continue;
+      const ls = g.linescore || {};
+      const ord = ls.currentPeriodOrdinal || "";
+      out.push({ pk: g.gamePk, d: (g.gameDate || "").slice(0, 10),
+        a: g.teams.away.team.abbreviation, h: g.teams.home.team.abbreviation,
+        an: g.teams.away.team.name, hn: g.teams.home.team.name,
+        aid: g.teams.away.team.id, hid: g.teams.home.team.id,
+        hs: g.teams.home.score, as: g.teams.away.score,
+        ot: ord === "OT" || ord === "SO" || (ls.currentPeriod || 0) > 3,
+        played: (g.status ? g.status.abstractGameState : "") === "Final",
+        state: g.status ? g.status.abstractGameState : "", start: g.gameDate });
+    }
+  }
+  out.sort(function(x, y) { return (x.d + (x.start || "")).localeCompare(y.d + (y.start || "")); });
+  return out;
+}
+function aiH(H, t) { if (!H[t]) H[t] = { last: [] }; return H[t]; }
+function aiRest(arr, d) { for (let i = arr.length - 1; i >= 0; i--) { const gap = Math.round((Date.parse(d) - Date.parse(arr[i].d)) / 864e5); if (gap > 0) return gap; } return 99; }
+function aiFeats(H, g, targetD) {
+  const hh = aiH(H, g.h).last, aa = aiH(H, g.a).last;
+  const rh = aiRest(hh, targetD), ra = aiRest(aa, targetD);
+  const form = function(arr) { const s = arr.slice(-5); if (!s.length) return 0.5; let p = 0; for (const e of s) p += e.win ? 2 : (e.ot ? 1 : 0); return p / (2 * s.length); };
+  const gd10 = function(arr) { const s = arr.slice(-10); if (!s.length) return 0; let gd = 0; for (const e of s) gd += e.gd; return gd / Math.max(1, s.length); };
+  return { f: [1, rh === 1 ? 1 : 0, ra === 1 ? 1 : 0, AICl(rh - ra, -3, 3), form(hh) - form(aa), gd10(hh) - gd10(aa)], rh: rh, ra: ra };
+}
+function aiRunModel(games) {
+  const H = {}, samples = [], fut = [];
+  for (const g of games) {
+    if (g.played && g.hs !== null && g.hs !== undefined) {
+      const y = g.hs > g.as ? 1 : 0;
+      const q = aiFeats(H, g, g.d);
+      samples.push({ f: q.f, y: y });
+      aiH(H, g.h).last.push({ d: g.d, ot: g.ot, win: y === 1, gd: g.hs - g.as });
+      aiH(H, g.a).last.push({ d: g.d, ot: g.ot, win: y === 0, gd: g.as - g.hs });
+    } else { fut.push({ g: g, q: aiFeats(H, g, g.d) }); }
+  }
+  if (samples.length < 60) return null;
+  const nF = 6, mean = [0,0,0,0,0,0], std = [0,0,0,0,0,0];
+  for (const s of samples) for (let i = 1; i < nF; i++) mean[i] += s.f[i] / samples.length;
+  for (const s of samples) for (let i = 1; i < nF; i++) std[i] += Math.pow(s.f[i] - mean[i], 2) / samples.length;
+  for (let i = 1; i < nF; i++) std[i] = Math.max(0.02, Math.sqrt(std[i]));
+  const stdize = function(f) { return f.map(function(v, i) { return i === 0 ? v : (v - mean[i]) / std[i]; }); };
+  const cut = Math.floor(samples.length * 0.7);
+  const train = samples.slice(0, cut).map(function(s) { return { f: stdize(s.f), y: s.y }; });
+  const test = samples.slice(cut).map(function(s) { return { f: stdize(s.f), y: s.y }; });
+  const w = [0,0,0,0,0,0];
+  for (let ep = 0; ep < 8; ep++) {
+    for (const s of train) {
+      let z = 0; for (let i = 0; i < nF; i++) z += w[i] * s.f[i];
+      const p = AIsg(z);
+      for (let i = 0; i < nF; i++) w[i] -= 0.12 * (p - s.y) * s.f[i];
+    }
+  }
+  const apply = function(f) { let z = 0; for (let i = 0; i < nF; i++) z += w[i] * f[i]; return AIsg(z); };
+  let acc = 0, ll = 0;
+  for (const s of test) { const p = apply(s.f); if ((p > 0.5 ? 1 : 0) === s.y) acc++; ll += -(s.y * Math.log(p + 1e-9) + (1 - s.y) * Math.log(1 - p + 1e-9)); }
+  const tr = train.reduce(function(a, s) { return a + s.y; }, 0) / train.length;
+  return { acc: acc / test.length, ll: ll / test.length, base: Math.max(tr, 1 - tr), nTrain: train.length, nTest: test.length, p: apply };
+}
+function aiReplay(games, target) {
+  const H = {};
+  for (const g of games) {
+    if (g.played && g.hs !== null && g.hs !== undefined && g.d < target.d) {
+      const y = g.hs > g.as ? 1 : 0;
+      aiH(H, g.h).last.push({ d: g.d, ot: g.ot, win: y === 1, gd: g.hs - g.as });
+      aiH(H, g.a).last.push({ d: g.d, ot: g.ot, win: y === 0, gd: g.as - g.hs });
+    }
+  }
+  return H;
+}
+const PLAYER_MEM = {};
+function aiEsc(s) { return String(s).replace(/</g, "&lt;"); }
+function aiRendRow(r) {
+  return "<tr><td class=\"mut\">" + (r.num || "-") + "</td><td><b>" + aiEsc(r.name) + "</b>" +
+    "<div style=\"font-size:10.5px;color:var(--mut)\">" + r.position + " · " + r.age + " л · " + aiEsc(r.hw) + (r.nat ? " · " + r.nat : "") + "</div></td>" +
+    "<td>" + r.gp + "</td><td>" + aiEsc(r.pts) + "</td><td>" + aiEsc(r.form5) + "</td><td>" + r.pm + "</td></tr>";
+}
+async function aiLoadOneGame(g, el) {
+  if (!el) return;
+  el.innerHTML = '<div class="tag">Загружаю составы…</div>';
+  const season = "20262027";
+  const teamsArr = [{ id: g.aid, ab: g.a }, { id: g.hid, ab: g.h }];
+  for (const tm of teamsArr) {
+    el.innerHTML = el.innerHTML.replace('<div class="tag">Загружаю составы…</div>', "") +
+      '<div style="margin:10px 0 4px;font-weight:800;color:var(--acc)">' + tm.ab + '</div><table class="tbl" id="tbl_' + tm.id + '"><tr style="color:var(--mut);font-size:10.5px"><td>#</td><td>Игрок</td><td>И</td><td>О</td><td>Форма5</td><td>+/-</td></tr></table>';
+    let roster = null;
+    try { roster = await fetchJSON(SAPI + "/teams/" + tm.id + "/roster", 12000); } catch (e) {}
+    const hold = document.getElementById("tbl_" + tm.id);
+    if (!hold) return;
+    if (!roster || !roster.roster) { hold.insertAdjacentHTML("afterend", '<div class="tag">Состав не загрузился: NHL API недоступен.</div>'); continue; }
+    const skaters = roster.roster.filter(function(pp) { return pp.position.abbreviation !== "G"; }).slice(0, 14);
+    await Promise.all(skaters.map(async function(rp) {
+      const pid = rp.person.id;
+      let d = PLAYER_MEM[pid];
+      if (!d) { try { const cache = JSON.parse(localStorage.getItem("pcs_" + pid) || "null"); if (cache && Date.now() - cache.t < 21600000) d = cache.d; } catch (e) {} }
+      if (!d) {
+        d = { name: (rp.person.fullName || "?"), num: (rp.jerseyNumber || "").replace(/[^0-9]/g, ""), position: rp.position.abbreviation, age: "-", hw: "-", nat: "", gp: "-", pts: "-", form5: "-", pm: "-" };
+        try {
+          const per = (await fetchJSON(SAPI + "/people/" + pid, 9000)).people[0];
+          d.age = Math.floor((Date.now() - Date.parse(per.birthDate)) / 3.15576e10);
+          const hm = (per.height || "").match(/(\d+)' ?(\d+)?'/);
+          d.hw = (hm ? Math.round(30.48 * (+hm[1]) + 2.54 * (+(hm[2] || 0))) + " см" : (per.height || "-")) + " · " + Math.round((per.weight || 0) * 0.4536) + " кг";
+          d.nat = per.nationality || "";
+        } catch (e) {}
+        try {
+          const sp = (await fetchJSON(SAPI + "/people/" + pid + "/stats?stats=statsSingleSeason&season=" + season, 9000)).stats[0].splits[0];
+          const st = sp ? sp.stat : null;
+          if (st && st.games) { d.gp = st.games; d.pts = (st.goals || 0) + "+" + (st.assists || 0) + "=" + (st.points || 0); d.pm = (st.plusMinus !== undefined ? st.plusMinus : "-"); }
+        } catch (e) {}
+        try {
+          const gl = (await fetchJSON(SAPI + "/people/" + pid + "/stats?stats=gameLog&season=" + season, 9000)).stats[0].splits;
+          const lt = (gl || []).slice(-5).reduce(function(a, x) { return a + (x.stat.goals || 0) + (x.stat.assists || 0); }, 0);
+          d.form5 = gl && gl.length ? (lt + " очк за " + Math.min(5, gl.length)) : "-";
+        } catch (e) {}
+        try { localStorage.setItem("pcs_" + pid, JSON.stringify({ t: Date.now(), d: d })); } catch (e) {}
+      }
+      PLAYER_MEM[pid] = d;
+    }));
+    for (const rp of skaters) { const d = PLAYER_MEM[rp.person.id]; if (d) hold.insertAdjacentHTML("beforeend", aiRendRow(d)); }
+    hold.insertAdjacentHTML("afterend", '<div class="tag" style="font-size:10.5px">Показаны первые 14 полевых игроков. Кэш 6 часов.</div>');
+  }
+  const lg = el.querySelector(".tag"); if (lg) lg.remove();
+}
+async function aiLoadPlayers(ups) {
+  const wrap = document.getElementById("aiPlayers");
+  if (!wrap || !ups.length) return;
+  let out = "";
+  ups.forEach(function(g, gi) {
+    out = out + '<details style="border:1px solid var(--ln);border-radius:16px;margin:10px 0;padding:4px 14px"><summary style="cursor:pointer;font-weight:800;font-size:14px;padding:8px 0">🧊 ' + g.an + " @ " + g.hn + " — разбор игроков (клик)</summary><div id='pb_" + gi + "' style='padding:8px 0'></div></details>";
+    setTimeout(function() { aiLoadOneGame(g, document.getElementById("pb_" + gi)); }, 60 + gi * 2000);
+  });
+  wrap.innerHTML = out;
+}
+async function aiLoad() {
+  const kEl = document.getElementById("aiKpis"), gEl = document.getElementById("aiGames");
+  if (!kEl) return;
+  let seasonJ = null;
+  try { seasonJ = JSON.parse(localStorage.getItem("nhl_season_cache_v1") || "null").j; } catch (e) {}
+  if (!seasonJ) { try { seasonJ = await fetchJSON(seasonUrl(), 20000); } catch (e) {} }
+  if (!seasonJ) { kEl.innerHTML = '<div class="tag">Нет данных сезона: расписание NHL не загрузилось.</div>'; return; }
+  const games = aiParse(seasonJ);
+  const M = aiRunModel(games);
+  if (!M) { kEl.innerHTML = '<div class="tag">Игр сезона пока мало для честного прогона модели (нужно минимум 60 сыгранных).</div>'; return; }
+  kEl.innerHTML =
+    "<div class='kpis'>" +
+    "<div class='kpi'><div class='l'>Точность модели на 30% тесте</div><div class='v am'>" + Math.round(100 * M.acc) + "%</div><div class='n'>n = " + M.nTest + " последних игр сезона</div></div>" +
+    "<div class='kpi'><div class='l'>База (большинство)</div><div class='v mut'>" + Math.round(100 * M.base) + "%</div><div class='n'>модель должна её бить</div></div>" +
+    "<div class='kpi'><div class='l'>Логлосс</div><div class='v'>" + M.ll.toFixed(3) + "</div><div class='n'>меньше = лучше</div></div>" +
+    "<div class='kpi'><div class='l'>Обучающих игр</div><div class='v'>" + M.nTrain + "</div><div class='n'>признаки: отдых, B2B, форма, голы</div></div>" +
+    "</div>";
+  const today = fmtIso(new Date()), tomo = fmtIso(new Date(Date.now() + 864e5));
+  const ups = games.filter(function(g) { return !g.played && g.d >= today && g.d <= tomo; });
+  let out = "";
+  for (const g of ups) {
+    const q = aiFeats(aiReplay(games, g), g, g.d);
+    const p = M.p(q.f);
+    const rule = q.ra === 1 && q.rh >= 3;
+    const prc = Math.round(100 * p) + "%";
+    const verdict = rule && p > 0.5 ? "✅ Правило и модель за хозяина: усиливают друг друга" : (rule && p <= 0.5 ? "⚠️ Правило за хозяина, модель против: пропуск" : (p > 0.62 ? "Сильный фаворит по модели (смотреть цену)" : "Под правило не попадает"));
+    out = out + '<div class="gcard' + (rule && p > 0.5 ? " hit" : "") + '">' +
+      '<div class="gtop"><span>' + (g.d === today ? "сегодня" : "завтра") + "</span><span>" + new Date(g.start).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) + "</span></div>" +
+      '<div class="gvs"><div class="team"><img src="https://assets.nhle.com/logos/nhl/svg/' + g.a + '_light.svg" alt=""><div class="tn' + (rule ? " guest" : "") + '">' + g.an + '</div>' + (rule ? '<div class="tr guest">ГОСТЬ · B2B</div>' : "") + '</div><div class="vsdiv">VS</div><div class="team"><img src="https://assets.nhle.com/logos/nhl/svg/' + g.h + '_light.svg" alt=""><div class="tn">' + g.hn + '</div><div class="tr am">ХОЗЯИН</div></div></div>' +
+      '<div class="betbox" style="background:rgba(83,169,255,.06);border-color:rgba(83,169,255,.3)"><span style="font-weight:800;color:var(--acc)">🤖 ИИ: победа хозяина ' + prc + '</span> <span class="mut">· гость ' + Math.round(100 * (1 - p)) + '%</span><div class="why">' + verdict + "</div></div>" +
+      "</div>";
+  }
+  gEl.innerHTML = out || '<div class="tag">На сегодня и завтра матчей нет.</div>';
+  aiLoadPlayers(ups);
+}
+let aiLoaded = false;
+for (const t of document.querySelectorAll(".tab")) {
+  t.addEventListener("click", function() { if (t.getAttribute("data-t") === "ai" && !aiLoaded) { aiLoaded = true; setTimeout(aiLoad, 100); } });
+}
+setTimeout(aiLoad, 2500);
 
 </script>
 </body></html>
