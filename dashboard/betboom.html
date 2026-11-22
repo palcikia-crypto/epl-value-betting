@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#070a10">
 <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>EDGE Dashboard (v7)</title>
+<title>EDGE Dashboard (v8)</title>
 <style>
 :root{--bg:#070a10;--sur:#0e1420;--sur2:#131b2b;--ln:#1e293f;--fg:#eaf1fb;--mut:#8598b3;--grn:#31e981;--red:#ff5d5d;--yel:#ffce56;--acc:#53a9ff;--grad:linear-gradient(135deg,#53a9ff,#7c5cff);}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -79,6 +79,12 @@ footer{color:var(--mut);font-size:11px;padding:20px 16px 40px;line-height:1.6;}
 <section data-s="today nhl all">
 <h2>📅 Ближайшие матчи NHL <span class="pill exp">LIVE</span></h2>
 <div id="gwrap"><div class="tag">Загружаю<span class="dots"></span></div></div>
+</section>
+
+<section data-s="acc all">
+<h2>🔄 Форвард-тест сезона 2026/27 <span class="pill exp">LIVE: бот считает со старта сезона</span></h2>
+<div class="card"><div id="fwd"><div class="tag">Первый полный расчёт появится в ближайшие 30 минут: бот пересобирает все сыгранные матчи сезона.</div></div>
+<div class="tag">Каждые 30 минут бот пересчитывает с нуля все сыгранные матчи сезона 2026/27: сплиты по усталости (гость B2B против свежих), z-тест, отдельный контроль после овертайма. Это независимая проверка выводов итераций 6-10 на новых данных.</div></div>
 </section>
 <section data-s="acc all"><div class="kpis">
 <div class="kpi"><div class="l">Elo-модель (тест 24/25)</div><div class="v am">58.8%</div><div class="n">n = 2295 · iter 7</div></div>
@@ -171,6 +177,20 @@ function fetchJSON(url, ms) {
   });
 }
 function renderRows(j) {
+  const ft = j.forward_test;
+  const el = document.getElementById("fwd");
+  if (ft && ft.n_b2b > 0 && el) {
+    el.innerHTML =
+      "<div class=\"kpis\">" +
+      "<div class=\"kpi\"><div class=\"l\">Гость B2B: домашних побед</div><div class=\"v\" style=\"color:var(--grn)\">" + Math.round(100 * ft.b2b_home_win) + "%</div><div class=\"n\">n = " + ft.n_b2b + " игр сезона</div></div>" +
+      "<div class=\"kpi\"><div class=\"l\">Оба свежие (база)</div><div class=\"v am\">" + Math.round(100 * ft.rested_home_win) + "%</div><div class=\"n\">n = " + ft.n_rested + "</div></div>" +
+      "<div class=\"kpi\"><div class=\"l\">z-статистика</div><div class=\"v\">" + (ft.z === null ? "-" : ft.z) + "</div><div class=\"n\">порог доверия z ≥ 2</div></div>" +
+      "<div class=\"kpi\"><div class=\"l\">B2B после OT</div><div class=\"v yl\">" + (ft.n_b2b_ot ? Math.round(100 * ft.b2b_ot_home_win) + "%" : "-") + "</div><div class=\"n\">n = " + ft.n_b2b_ot + "</div></div>" +
+      "</div>";
+  } else if (ft && el) {
+    el.innerHTML = "<div class=\"tag\">Сезон в процессе: B2B игр пока " + (ft.n_b2b || 0) + ". Статистика появится по мере накопления выборки.</div>";
+  }
+
   const gwrap = document.getElementById("gwrap");
   const rows = (j.rows || []).filter(function(r) { return r.state !== "FINAL"; });
   let out = "";
