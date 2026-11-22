@@ -1,0 +1,115 @@
+{
+ "nhl_ot_load": {
+  "away_b2b_ot_last": {
+   "n": 235,
+   "home_win": 0.5021
+  },
+  "away_b2b_no_ot": {
+   "n": 1594,
+   "home_win": 0.5897
+  },
+  "away_rested_ot_last": {
+   "n": 881,
+   "home_win": 0.4484
+  },
+  "away_rested_no_ot": {
+   "n": 6160,
+   "home_win": 0.5356
+  },
+  "z_b2b_ot_vs_b2b": -2.538,
+  "z_rested_ot_vs_rested": -4.848
+ },
+ "nfl_fatigue": {
+  "both_normal_6_9": {
+   "n": 694,
+   "home_win": 0.5274
+  },
+  "both_short_4_5": {
+   "n": 60,
+   "home_win": 0.5333
+  },
+  "away_short_home_norm": {
+   "n": 4,
+   "home_win": 0.5
+  },
+  "home_short_away_norm": {
+   "n": 4,
+   "home_win": 0.75
+  },
+  "away_bye_home_norm": {
+   "n": 118,
+   "home_win": 0.5424
+  },
+  "home_bye_away_norm": {
+   "n": 113,
+   "home_win": 0.5929
+  },
+  "base_home_win": 0.5274,
+  "z_vs_base": {
+   "away_bye_home_norm": 0.302,
+   "home_bye_away_norm": 1.296
+  },
+  "rule_bet_bye_team": {
+   "n": 231,
+   "roi": -0.1976,
+   "yield": -0.0978,
+   "wr": 0.5238,
+   "dd": 0.2745,
+   "yield_t": -1.38,
+   "p_value": 0.16752
+  }
+ },
+ "ncaab_fatigue": {
+  "base_home_win": 0.6511,
+  "away_b2b_home_rested": {
+   "n": 83,
+   "home_win": 0.6747
+  },
+  "home_b2b_away_rested": {
+   "n": 59,
+   "home_win": 0.5424
+  },
+  "both_rested": {
+   "n": 14838,
+   "home_win": 0.6511
+  },
+  "away_b2b_vs_base_z": 0.45,
+  "home_b2b_vs_base_z": -1.748,
+  "rule_bet_home_vs_away_b2b": {
+   "n": 76,
+   "roi": -0.1057,
+   "yield": -0.1512,
+   "wr": 0.6711,
+   "dd": 0.1196,
+   "yield_t": -1.889,
+   "p_value": 0.05891
+  }
+ },
+ "atp_fatigue": {
+  "n_instances_with_fat_state": 1420,
+  "win_rate_when_fatigued": 0.4739,
+  "expected_win_rate_odds": 0.4593,
+  "fatigue_delta": 0.0146,
+  "bet_fatigued_yield": 0.0006,
+  "delta_z": 1.102
+ },
+ "polymarket": {
+  "n_matched_games": 1463,
+  "polymarket": {
+   "accuracy": 0.5612,
+   "logloss": 0.6748,
+   "brier": 0.2411
+  },
+  "tuned_elo_same_subset": {
+   "accuracy": 0.5489,
+   "logloss": 0.6858,
+   "brier": 0.2463
+  },
+  "poly_minus_elo_accuracy": 0.0123,
+  "poly_minus_elo_logloss": -0.011,
+  "disagreement_5pp": {
+   "n": 692,
+   "poly_side_hit_rate": 0.5636
+  }
+ }
+}
