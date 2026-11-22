@@ -85,4 +85,4 @@ async function main() {
     rows }, null, 1));
   console.log("today.json: rows", rows.length, "games", seg.games, "b2b_n", seg.b2b_n, "z", z);
 }
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => { console.error(e); });
